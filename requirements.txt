@@ -1,0 +1,7 @@
+numpy
+scipy
+matplotlib
+uncertainties
+pandas
+plotnine
+pytest
