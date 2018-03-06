@@ -82,7 +82,7 @@ def testRecursiveStuff(value):
     data[0] -= data[0][0]
     data[1] -= np.mean(data[1])
 
-    frequencyList = recursiveFrequencyFinder(data,4,2)
+    frequencyList = recursiveFrequencyFinder(data,(0,50),4,2)
 
     assert len(frequencyList) == checklist
 
