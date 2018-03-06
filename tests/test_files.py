@@ -27,7 +27,7 @@ def testRemoveMean(value):
     assert data[0][0] == 0
 
 @pytest.mark.parametrize("value",testCasesDataReduction)
-def testGetSlits(value):
+def testGetSplits(value):
     value = normalizeData(value)
     timeRange = max(value[0])/10
     overlap = max(value[0])/50
@@ -38,4 +38,11 @@ def testGetSlits(value):
 
     for i in range(0,len(dataList)-1):
         assert dataList[i+1][0][0]-max(dataList[i][0]) - overlap < 10**-3
+
+@pytest.mark.parametrize("value",testCasesDataReduction)
+def testGetSplitsMax(value):
+    value = normalizeData(value)
+    dataList = getSplits(value)
+    assert len(dataList[0][0]) == len(value[0]) - 1
+
 

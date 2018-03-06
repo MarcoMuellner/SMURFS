@@ -1,1 +1,1 @@
-from .amplitude_spectra_calculation import *
+from .timerseries import *

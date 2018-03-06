@@ -1,5 +1,5 @@
 import pytest
-from timeseries.amplitude_spectra_calculation import *
+from timeseries.timerseries import *
 
 
 def getSin(amp,frequency):

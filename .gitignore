@@ -103,3 +103,5 @@ ENV/
 \.idea/
 
 .pytest_cache/
+
+results\.txt

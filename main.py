@@ -34,7 +34,11 @@ parser.add_argument("-om","--outputMode",help="Optional parameter that defines w
 
 args = parser.parse_args()
 
-run(args.fileName,args.snr,args.windowSize,args.frequencyRange,args.timeRangeSplit,args.overlap,args.outputMode)
+run(args.fileName,args.snr,windowSize=args.windowSize
+                            ,frequencyRange=args.frequencyRange
+                            ,timeRange=args.timeRangeSplit
+                            ,overlap=args.overlap
+                            ,outputMode=args.outputMode)
 
 
 
