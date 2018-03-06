@@ -1,6 +1,6 @@
 import pytest
-from amplitude_spectra_calculation import *
-import pylab as pl
+from timeseries.amplitude_spectra_calculation import *
+
 
 def getSin(amp,frequency):
     t = np.linspace(0, 1, 2000)

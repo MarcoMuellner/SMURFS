@@ -3,3 +3,6 @@ numpy
 astropy
 scipy
 matplotlib
+plotnine
+pandas
+stem

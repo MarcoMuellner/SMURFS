@@ -2,14 +2,14 @@ import numpy as np
 from astropy.stats import LombScargle
 from scipy.optimize import curve_fit
 
-def calculateAmplitudeSpectrum(data):
+def calculateAmplitudeSpectrum(data,range=(0,50)):
     ls = LombScargle(data[0],data[1],normalization='psd')
-    f,p = ls.autopower(minimum_frequency=0,maximum_frequency=50,samples_per_peak=100)
+    f,p = ls.autopower(minimum_frequency=range[0],maximum_frequency=range[1],samples_per_peak=100)
     p = np.sqrt(4/len(data[0]))*np.sqrt(p)
     p = p[1:len(p)]
     f = f[1:len(f)]
-    p = p[f < nyquistFrequency(data)]
-    f = f[f < nyquistFrequency(data)]
+    p = p[f < range[1]]
+    f = f[f < range[1]]
     return f,p
 
 def nyquistFrequency(data):
@@ -67,15 +67,15 @@ def checkMinima(yData,counter):
 def sin(x,amp,f,phase):
     return amp * np.sin(2*np.pi * f * x + phase)
 
-def recursiveFrequencyFinder(data,snrCriterion,windowSize):
+def recursiveFrequencyFinder(data,frequencyRange,snrCriterion,windowSize):
     snr = 100
     frequencyList = []
     while(snr > snrCriterion):
         try:
-            frequencyList.append(fit[1])
+            frequencyList.append((fit[1],snr))
         except:
             pass
-        amp = calculateAmplitudeSpectrum(data)
+        amp = calculateAmplitudeSpectrum(data,frequencyRange)
         snr = computeSignalToNoise(amp, windowSize)
         fit,data = findAndRemoveMaxFrequency(data,amp)
 

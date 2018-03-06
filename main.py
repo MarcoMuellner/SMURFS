@@ -1,5 +1,5 @@
 import argparse
-
+from analysis import *
 
 
 parser = argparse.ArgumentParser()
@@ -7,11 +7,12 @@ parser = argparse.ArgumentParser()
 parser.add_argument("fileName",help="The filename of the lightcurve. Has to be a text file. Please provide "
                                     "absolute path",type=str)
 parser.add_argument("snr",help="The desired lower bound for the signal to noise ratio for the analysis",type=float)
+parser.add_argument("windowSize",help="The window size used to get the SNR for a given frequency",type=float)
 parser.add_argument("-fr","--frequencyRange",help="Optional parameter that describes the desired frequency range. "
                                                   "The application will only check within this parameters if given. "
                                                   "Per default this parameter is set from 0 to Nyquist frequency."
                                                   "Please enter it in a form of a tuple (lower,higher).",
-                    type=tuple,default=(0,0))
+                    type=tuple,default=(0,50))
 parser.add_argument("-trs","--timeRangeSplit",help="Optional parameter that describes the split within the time range."
                                                    "This can be used to get multiple amplitude spectra for the "
                                                    "lightcurve, split up within the time Range. A parameter could be "
@@ -32,6 +33,12 @@ parser.add_argument("-om","--outputMode",help="Optional parameter that defines w
                     type=str,choices=["Normal","Full"],default="Normal")
 
 args = parser.parse_args()
+
+run(args.fileName,args.snr,args.windowSize,args.frequencyRange,args.timeRangeSplit,args.overlap,args.outputMode)
+
+
+
+
 
 
 
