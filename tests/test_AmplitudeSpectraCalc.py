@@ -7,12 +7,23 @@ def getSin(amp,frequency):
     y = amp*np.sin(2*np.pi*frequency*t)
     return np.array((t,y))
 
-testCases = [(getSin(1,5),[(1,5)])
-            ,(getSin(2,10),[(2,10)])
-            ,(np.loadtxt("betaPic_BTrBHr_all_2col.dat").T,[(1.4639274842832088,47.43923486)])]
+testCasesFrequency = [(getSin(1, 5), [(1, 5)])
+            , (getSin(2,10),[(2,10)])
+            , (np.loadtxt("betaPic_BTrBHr_all_2col.dat").T,[(1.4639274842832088,47.43923486)])]
 
-#@pytest.mark.parametrize("value",testCases)
-@pytest.mark.skip(reason="debug")
+testCasesMinMax = [(getSin(1, 5), (399, 599))
+            , (getSin(2,10),(899,1099))
+            , (np.loadtxt("betaPic_BTrBHr_all_2col.dat").T,(1065229,1065474))]
+
+testCasesSNR = [(getSin(1, 5), 8.757757597126078)
+            , (getSin(2,10),9.019715823249125)
+            , (np.loadtxt("betaPic_BTrBHr_all_2col.dat").T,25.28636173902136)]
+
+testCasesFrequencyList = [(getSin(1, 5), 1)
+            , (getSin(2,10),1)
+            , (np.loadtxt("betaPic_BTrBHr_all_2col.dat").T,13)]
+
+@pytest.mark.parametrize("value", testCasesFrequency)
 def testCalculateAmplitudeSpectrum(value):
     data = value[0]
     checklist = value[1]
@@ -24,12 +35,8 @@ def testCalculateAmplitudeSpectrum(value):
         assert len(xData) != 0
         yData = amp[1][abs(amp[0] - f) < 10**-3]
         assert yData[0] - a < 10**-1
-        print(yData[0])
-    print("Max amp: "+str(np.amax(amp[1][1:len(amp[1])])))
-    print("Max f: "+ str(amp[0][amp[1] == max(amp[1])]))
 
-#@pytest.mark.parametrize("value",testCases)
-@pytest.mark.skip(reason="debug")
+@pytest.mark.parametrize("value", testCasesFrequency)
 def testFit(value):
     data = value[0]
     checklist = value[1]
@@ -43,8 +50,7 @@ def testFit(value):
         assert fit[0] - a < 10**-4
         assert fit[1] - f < 10**-4
 
-#@pytest.mark.parametrize("value",testCases)
-@pytest.mark.skip(reason="debug")
+@pytest.mark.parametrize("value", testCasesMinMax)
 def testMinimaMaxima(value):
     data = value[0]
     checklist = value[1]
@@ -53,10 +59,11 @@ def testMinimaMaxima(value):
 
     amp = calculateAmplitudeSpectrum(data)
     lowerMin,upperMin = findNextMinimas(amp[1])
+    assert lowerMin == checklist[0]
+    assert upperMin == checklist[1]
 
 
-#@pytest.mark.parametrize("value",testCases)
-@pytest.mark.skip(reason="debug")
+@pytest.mark.parametrize("value", testCasesSNR)
 def testSNR(value):
     data = value[0]
     checklist = value[1]
@@ -66,14 +73,17 @@ def testSNR(value):
     amp = calculateAmplitudeSpectrum(data)
     fit,data = findAndRemoveMaxFrequency(data,amp)
     snr = computeSignalToNoise(amp,2)
-    print(snr)
+    assert abs(checklist - snr) < 10**-6
 
-@pytest.mark.parametrize("value",testCases)
+@pytest.mark.parametrize("value", testCasesFrequencyList)
 def testRecursiveStuff(value):
     data = value[0]
     checklist = value[1]
     data[0] -= data[0][0]
     data[1] -= np.mean(data[1])
 
-    recursiveFrequencyFinder(data,4,2)
+    frequencyList = recursiveFrequencyFinder(data,4,2)
+
+    assert len(frequencyList) == checklist
+
 

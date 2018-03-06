@@ -73,12 +73,10 @@ def recursiveFrequencyFinder(data,snrCriterion,windowSize):
     while(snr > snrCriterion):
         try:
             frequencyList.append(fit[1])
-            print("Found frequency at " + str(fit[1]))
-            print("SNR is " + str(snr))
         except:
             pass
         amp = calculateAmplitudeSpectrum(data)
         snr = computeSignalToNoise(amp, windowSize)
         fit,data = findAndRemoveMaxFrequency(data,amp)
 
-    print("Frequencies are " +str(frequencyList))
+    return frequencyList
