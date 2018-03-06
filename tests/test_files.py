@@ -1,6 +1,7 @@
 import pytest
 from files import *
 import numpy as np
+from timeseries import *
 
 def getSin(offset,amp,frequency):
     t = np.linspace(0, 1, 2000)
@@ -44,5 +45,20 @@ def testGetSplitsMax(value):
     value = normalizeData(value)
     dataList = getSplits(value)
     assert len(dataList[0][0]) == len(value[0]) - 1
+
+@pytest.fixture(scope='function')
+@pytest.mark.parametrize("value",testCasesDataReduction)
+def testWriteFile(value,tmpdir_factory):
+    value = normalizeData(value)
+    dataList = getSplits(value)
+    dir = tmpdir_factory.mktemp('temp').join('results.txt')
+    result = {}
+    for data in dataList:
+        frequencyList = recursiveFrequencyFinder(data, (0,50), 4, 2)
+        result[(data[0][0], max(data[0]))] = frequencyList
+
+    writeResults(str(dir),result)
+    assert os.path.exists(str(dir))
+
 
 

@@ -32,9 +32,10 @@ def find_nearest(array,value):
 
 def writeResults(file,data,mode='w'):
     with open(file,mode) as f:
-        f.write("Lowerrange Upperrange")
+        f.write("Lowerrange Upperrange\n")
         for key,value in data.items():
-            f.write(str(key[0]) + " " + str(key[1]))
-            f.write("   frequency snr")
-            for i in range(0,value):
-                f.write("   "+str(i[0])+" "+str(i[1]))
+            f.write(str(key[0]) + " " + str(key[1])+"\n")
+            f.write("   frequency snr"+"\n")
+            for i in value:
+                f.write("   "+str(i[0])+" "+str(i[1])+"\n")
+
