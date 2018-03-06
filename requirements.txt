@@ -1,7 +1,5 @@
+pytest
 numpy
+astropy
 scipy
 matplotlib
-uncertainties
-pandas
-plotnine
-pytest
