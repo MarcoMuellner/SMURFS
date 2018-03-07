@@ -46,15 +46,15 @@ def testGetSplitsMax(value):
     dataList = getSplits(value)
     assert len(dataList[0][0]) == len(value[0]) - 1
 
-@pytest.fixture(scope='function')
 @pytest.mark.parametrize("value",testCasesDataReduction)
 def testWriteFile(value,tmpdir_factory):
     value = normalizeData(value)
     dataList = getSplits(value)
     dir = tmpdir_factory.mktemp('temp').join('results.txt')
+    path= tmpdir_factory.mktemp('')
     result = {}
     for data in dataList:
-        frequencyList = recursiveFrequencyFinder(data, (0,50), 4, 2)
+        frequencyList = recursiveFrequencyFinder(data, (0,50), 4, 2,path=path)
         result[(data[0][0], max(data[0]))] = frequencyList
 
     writeResults(str(dir),result)

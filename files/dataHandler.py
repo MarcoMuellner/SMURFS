@@ -1,5 +1,7 @@
 import numpy as np
 import os
+from support import cd,plotCustom
+from plotnine import *
 
 def normalizeData(data):
     data[0] -= data[0][0]
@@ -39,3 +41,16 @@ def writeResults(file,data,mode='w'):
             for i in value:
                 f.write("   "+str(i[0])+" "+str(i[1])+"\n")
 
+def createPath(path):
+    if not os.path.exists(path):
+        os.mkdir(path)
+
+def saveAmpSpectrumAndImage(ampSpectrum,path,name):
+    if not os.path.exists(path):
+        os.mkdir(path)
+
+    with cd(path):
+        np.savetxt(name+"spectrum.txt",ampSpectrum.T)
+        plotData = {"Amplitude Spectrum":(ampSpectrum.T, geom_line, 'solid')}
+        p = plotCustom(name,plotData,xLabel="Frequency",yLabel="Amplitude")
+        p.save(name+".png")

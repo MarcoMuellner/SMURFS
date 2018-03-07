@@ -1,1 +1,5 @@
-{}
+{
+  "test_timeseries.py::testRecursiveStuff[value0]": true,
+  "test_timeseries.py::testRecursiveStuff[value1]": true,
+  "test_timeseries.py::testRecursiveStuff[value2]": true
+}

@@ -3,6 +3,6 @@ numpy
 astropy
 scipy
 matplotlib
-plotnine
+plotnine==0.2.1
 pandas
 stem

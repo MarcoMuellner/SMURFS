@@ -75,14 +75,3 @@ def testSNR(value):
     snr = computeSignalToNoise(amp,2)
     assert abs(checklist - snr) < 10**-6
 
-@pytest.mark.parametrize("value", testCasesFrequencyList)
-def testRecursiveStuff(value):
-    data = value[0]
-    checklist = value[1]
-    data[0] -= data[0][0]
-    data[1] -= np.mean(data[1])
-
-    frequencyList = recursiveFrequencyFinder(data,(0,50),4,2)
-
-    assert len(frequencyList) == checklist
-

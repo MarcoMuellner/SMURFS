@@ -1,7 +1,8 @@
 from plotnine import *
 import pandas as pd
+import pylab as pl
 
-def plotCustom(title, data, xLabel="", yLabel="", fileName ="", save = False):
+def plotCustom(title, data, **kwargs):
     p = ggplot()
     for name,(data,linestyle,linetype) in data.items():
         linetype = 'solid' if linetype is None else linetype
@@ -16,6 +17,5 @@ def plotCustom(title, data, xLabel="", yLabel="", fileName ="", save = False):
         else:
             p = p + linestyle(aes(x='x', y='y', color='Legend'), data=plotData,linetype=linetype)
 
-    p = p+ggtitle(title)+xlab(xLabel)+ylab(yLabel)
-
-    print(p)
+    p = p+ggtitle(title)+xlab(kwargs['xLabel'])+ylab(kwargs['yLabel'])
+    return p
