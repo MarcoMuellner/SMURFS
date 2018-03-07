@@ -1,4 +1,6 @@
 # SMURFS
+![SMURFS Image](https://i.imgur.com/wWe1q0y.png)
+
 **SMURFS** (**SM**art **U**se**R** **F**requency analy**S**er) is a simple program, that allows for a quick statistical analysis of variable stars 
 using the LombScargle algorithm. It also allows for "splitting" such a dataset into equally sized chunks, to perform a 
 time dependend analysis of the frequencies.
