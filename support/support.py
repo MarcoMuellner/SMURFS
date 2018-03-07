@@ -1,5 +1,10 @@
 import os
 
+import matplotlib as mpl
+if os.environ.get('DISPLAY','') == '':
+    print('no display found. Using non-interactive Agg backend')
+    mpl.use('Agg')
+
 class cd:
     """
     Directory changer. can change the directory using the 'with' keyword, and returns to the previous path

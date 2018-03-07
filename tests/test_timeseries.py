@@ -9,19 +9,19 @@ def getSin(amp,frequency):
 
 testCasesFrequency = [(getSin(1, 5), [(1, 5)])
             , (getSin(2,10),[(2,10)])
-            , (np.loadtxt("betaPic_BTrBHr_all_2col.dat").T,[(1.4639274842832088,47.43923486)])]
+            , (np.loadtxt("testFile.dat").T,[(1.4639274842832088,47.43923486)])]
 
 testCasesMinMax = [(getSin(1, 5), (399, 599))
             , (getSin(2,10),(899,1099))
-            , (np.loadtxt("betaPic_BTrBHr_all_2col.dat").T,(1065229,1065474))]
+            , (np.loadtxt("testFile.dat").T,(1065229,1065474))]
 
 testCasesSNR = [(getSin(1, 5), 8.757757597126078)
             , (getSin(2,10),9.019715823249125)
-            , (np.loadtxt("betaPic_BTrBHr_all_2col.dat").T,25.28636173902136)]
+            , (np.loadtxt("testFile.dat").T,25.28636173902136)]
 
 testCasesFrequencyList = [(getSin(1, 5), 1)
             , (getSin(2,10),1)
-            , (np.loadtxt("betaPic_BTrBHr_all_2col.dat").T,13)]
+            , (np.loadtxt("testFile.dat").T,13)]
 
 @pytest.mark.parametrize("value", testCasesFrequency)
 def testCalculateAmplitudeSpectrum(value):
