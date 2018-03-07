@@ -1,12 +1,14 @@
 import numpy as np
 from astropy.stats import LombScargle
 from scipy.optimize import curve_fit
+from typing import Tuple,List
 
 from files import saveAmpSpectrumAndImage
 
-def calculateAmplitudeSpectrum(data,range=(0,50)):
+def calculateAmplitudeSpectrum(data: np.ndarray, range: Tuple[float,float] = (0, 50)) -> np.ndarray:
     ls = LombScargle(data[0],data[1],normalization='psd')
-    f,p = ls.autopower(minimum_frequency=range[0],maximum_frequency=range[1],samples_per_peak=100)
+    max_frequency = range[1] if range[1] < nyquistFrequency(data) else nyquistFrequency(data)
+    f,p = ls.autopower(minimum_frequency=range[0],maximum_frequency=max_frequency,samples_per_peak=100)
     p = np.sqrt(4/len(data[0]))*np.sqrt(p)
     p = p[1:len(p)]
     f = f[1:len(f)]
@@ -14,10 +16,10 @@ def calculateAmplitudeSpectrum(data,range=(0,50)):
     f = f[f < range[1]]
     return np.array((f,p))
 
-def nyquistFrequency(data):
+def nyquistFrequency(data: np.ndarray) -> float:
     return float(1/(2*np.mean(np.diff(data[0]))))
 
-def findAndRemoveMaxFrequency(lightCurve,ampSpectrum):
+def findAndRemoveMaxFrequency(lightCurve: np.ndarray, ampSpectrum: np.ndarray) -> Tuple[List[float],np.ndarray]:
     maxY = max(ampSpectrum[1])
     maxX = ampSpectrum[0][abs(ampSpectrum[1] - max(ampSpectrum[1])) < 10**-4][0]
 
@@ -28,7 +30,7 @@ def findAndRemoveMaxFrequency(lightCurve,ampSpectrum):
 
     return popt,retLightCurve
 
-def computeSignalToNoise(ampSpectrum,windowSize):
+def computeSignalToNoise(ampSpectrum: np.ndarray, windowSize: float) -> float:
     y = ampSpectrum[1]
     x = ampSpectrum[0]
     lowerMinima,upperMinima = findNextMinimas(y)
@@ -41,7 +43,7 @@ def computeSignalToNoise(ampSpectrum,windowSize):
     return float(maxVal/meanValue)
 
 
-def findNextMinimas(yData):
+def findNextMinimas(yData: np.ndarray) -> Tuple[int,int]:
     index = int(np.where(abs(yData - max(yData)) < 10**-6)[0][0])
     minimaFound = False
     counter = 1
@@ -63,13 +65,14 @@ def findNextMinimas(yData):
 
 
 
-def checkMinima(yData,counter):
+def checkMinima(yData: np.ndarray, counter: int) -> bool:
     return yData[counter] < yData[counter + 1] and yData[counter] < yData[counter- 1]
 
-def sin(x,amp,f,phase):
+def sin(x: np.ndarray, amp:float, f: float, phase: float) -> np.ndarray:
     return amp * np.sin(2*np.pi * f * x + phase)
 
-def recursiveFrequencyFinder(data,frequencyRange,snrCriterion,windowSize,path=""):
+def recursiveFrequencyFinder(data: np.ndarray, frequencyRange: Tuple[float,float]
+                             , snrCriterion: float, windowSize: float, path: str = "") -> List[Tuple[float,float]]:
     snr = 100
     frequencyList = []
     while(snr > snrCriterion):
