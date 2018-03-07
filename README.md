@@ -28,3 +28,14 @@ Afterwards install all necessary packages using pip
 pip install -r requirements.txt
 ```
 And you are set to go.
+
+## Usage
+All possible commandline parameters can be accessed using the help flag
+```
+python main.py -h
+```
+At least you need to provide the fileName, signal to noise ration and windowsize. For example
+```
+python main.py tests/testFile.dat 4 2
+```
+To define chunks provide the timerangesplit and overlap parameters.
