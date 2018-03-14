@@ -12,7 +12,7 @@ parser.add_argument("-fr","--frequencyRange",help="Optional parameter that descr
                                                   "The application will only check within this parameters if given. "
                                                   "Per default this parameter is set from 0 to Nyquist frequency."
                                                   "Please enter it in a form of a tuple (lower,higher).",
-                    type=str,default=(0,50))
+                    type=str,default="0,50")
 parser.add_argument("-trs","--timeRangeSplit",help="Optional parameter that describes the split within the time range."
                                                    "This can be used to get multiple amplitude spectra for the "
                                                    "lightcurve, split up within the time Range. A parameter could be "
