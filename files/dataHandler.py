@@ -1,7 +1,9 @@
 import numpy as np
 import os
 from support import cd,plotCustom
-from plotnine import *
+import warnings
+with warnings.catch_warnings():
+    from plotnine import *
 from typing import List,Dict,Tuple
 
 def normalizeData(data: np.ndarray) -> np.ndarray:

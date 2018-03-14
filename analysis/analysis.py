@@ -40,7 +40,8 @@ def run(file: str, snrCriterion: float, windowSize: float, **kwargs: dict):
         print(term.format("Range from " + str(data[0][0]) + " to " + str(max(data[0])), term.Color.GREEN))
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            frequencyList = recursiveFrequencyFinder(data,kwargs['frequencyRange'],snrCriterion,windowSize)
+            frequencyList = recursiveFrequencyFinder(data,snrCriterion,windowSize
+                                                     ,frequencyRange=kwargs['frequencyRange'],mode=kwargs['outputMode'])
         print(term.format("Range from "+str(data[0][0])+" to "+str(max(data[0])), term.Color.GREEN))
         print("Length of frequencyList: "+str(len(frequencyList)))
         print("Frequencies: "+str(frequencyList))

@@ -1,6 +1,7 @@
+import warnings
+warnings.simplefilter(action='ignore',category=FutureWarning)
 from plotnine import *
 import pandas as pd
-import pylab as pl
 
 def plotCustom(title, data, **kwargs):
     p = ggplot()

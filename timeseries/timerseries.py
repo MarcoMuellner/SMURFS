@@ -71,24 +71,26 @@ def checkMinima(yData: np.ndarray, counter: int) -> bool:
 def sin(x: np.ndarray, amp:float, f: float, phase: float) -> np.ndarray:
     return amp * np.sin(2*np.pi * f * x + phase)
 
-def recursiveFrequencyFinder(data: np.ndarray, frequencyRange: Tuple[float,float]
-                             , snrCriterion: float, windowSize: float, path: str = "") -> List[Tuple[float,float]]:
+def recursiveFrequencyFinder(data: np.ndarray, snrCriterion: float, windowSize: float, path: str = "",
+                             **kwargs):
     snr = 100
     frequencyList = []
     while(snr > snrCriterion):
         try:
             frequencyList.append((fit[1],snr))
-            saveStuff = False
+            saveStuff = True if kwargs['mode'] == 'Full' else False
         except:
             saveStuff = True
-        amp = calculateAmplitudeSpectrum(data,frequencyRange)
+        amp = calculateAmplitudeSpectrum(data,kwargs['frequencyRange'])
         snr = computeSignalToNoise(amp, windowSize)
         fit,data = findAndRemoveMaxFrequency(data,amp)
         print("Found frequency at "+str(fit[1])+" with snr "+str(snr))
         if saveStuff:
-            saveAmpSpectrumAndImage(amp,path+"results/"+str(int(data[0][0]))+"_"+str(int(max(data[0])))+"/","First_amplitude_spectrum")
+            saveAmpSpectrumAndImage(amp,path+"results/"+str(int(data[0][0]))+"_"+str(int(max(data[0])))+"/"
+                                    ,"amplitude_spectrum_f_"+str(len(frequencyList)))
 
-    saveAmpSpectrumAndImage(amp,path+"results/"+str(int(data[0][0]))+"_"+str(int(max(data[0])))+"/","Last_amplitude_spectrum")
+    saveAmpSpectrumAndImage(amp,path+"results/"+str(int(data[0][0]))+"_"+str(int(max(data[0])))+"/"
+                            ,"amplitude_f_"+str(len(frequencyList)))
 
 
     return frequencyList
