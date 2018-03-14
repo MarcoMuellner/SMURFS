@@ -105,8 +105,11 @@ def recursiveFrequencyFinder(data: np.ndarray, snrCriterion: float, windowSize: 
         if saveStuff:
             saveAmpSpectrumAndImage(amp,savePath,fileNames)
 
-    if kwargs['mode'] == 'Normal':
-        saveAmpSpectrumAndImage(amp, savePath, fileNames)
+    try:
+        if kwargs['mode'] == 'Normal':
+            saveAmpSpectrumAndImage(amp, savePath, fileNames)
+    except KeyError:
+        pass
 
 
     return frequencyList
