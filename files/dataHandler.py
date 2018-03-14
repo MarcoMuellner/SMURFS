@@ -1,11 +1,13 @@
 import numpy as np
 import os
-from support import cd,plotCustom
+from support import *
 import warnings
 with warnings.catch_warnings():
     from plotnine import *
 from typing import List,Dict,Tuple
+from multiprocessing import Process
 
+@timeit
 def normalizeData(data: np.ndarray) -> np.ndarray:
     """
     This function reduces the dataset to make computations easier. It subtracts the 0 point in the temporal axis and
@@ -17,7 +19,7 @@ def normalizeData(data: np.ndarray) -> np.ndarray:
     data[1] -= np.mean(data[1])
     return data
 
-
+@timeit
 def readData(file: str) -> np.ndarray:
     """
     This function checks if the filepath in file exists (if not it raises an IOError) and than reads the file into
@@ -30,6 +32,7 @@ def readData(file: str) -> np.ndarray:
 
     return np.loadtxt(file).T
 
+@timeit
 def getSplits(data: np.ndarray, timeRange: float = -1, overlap: float = 0) -> List[np.ndarray]:
     """
     The getSplits function creates equally sized chunks of the original dataset with an optional overlap between two
@@ -57,6 +60,7 @@ def getSplits(data: np.ndarray, timeRange: float = -1, overlap: float = 0) -> Li
         i +=1
     return dataPoints
 
+@timeit
 def find_nearest(array: np.ndarray, value: float) -> int:
     """
     Fins the index of the nearest value to a value in an array.
@@ -67,6 +71,7 @@ def find_nearest(array: np.ndarray, value: float) -> int:
     idx = (np.abs(array-value)).argmin()
     return int(idx)
 
+@timeit
 def writeResults(file: str, data: Dict[Tuple[float,float],List[Tuple[float,float]]], mode: str = 'w'):
     """
     This function writes the results of the analysis. The file will have a structure like this:
@@ -87,6 +92,7 @@ def writeResults(file: str, data: Dict[Tuple[float,float],List[Tuple[float,float
             for i in value:
                 f.write("   "+str(i[0])+" "+str(i[1])+"\n")
 
+@timeit
 def createPath(path):
     """
     This function creates a path if it doesn't exist
@@ -95,6 +101,7 @@ def createPath(path):
     if not os.path.exists(path):
         os.mkdir(path)
 
+@timeit
 def saveAmpSpectrumAndImage(ampSpectrum: np.ndarray, path: str, name: str):
     """
     This function saves the amplitude spectrum and according plots to the results path.
@@ -107,4 +114,4 @@ def saveAmpSpectrumAndImage(ampSpectrum: np.ndarray, path: str, name: str):
         np.savetxt(name+"spectrum.txt",ampSpectrum.T)
         plotData = {"Amplitude Spectrum":(ampSpectrum, geom_line, 'solid')}
         p = plotCustom(name,plotData,xLabel="Frequency",yLabel="Amplitude")
-        p.save(name+".png")
+        p.save()

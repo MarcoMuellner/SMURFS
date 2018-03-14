@@ -4,7 +4,11 @@ from scipy.optimize import curve_fit
 from typing import Tuple,List
 
 from files import saveAmpSpectrumAndImage
+from support import *
 
+from multiprocessing import Process
+
+@timeit
 def calculateAmplitudeSpectrum(data: np.ndarray, range: Tuple[float,float] = (0, 50)) -> np.ndarray:
     ls = LombScargle(data[0],data[1],normalization='psd')
     max_frequency = range[1] if range[1] < nyquistFrequency(data) else nyquistFrequency(data)
@@ -16,6 +20,7 @@ def calculateAmplitudeSpectrum(data: np.ndarray, range: Tuple[float,float] = (0,
     f = f[f < range[1]]
     return np.array((f,p))
 
+@timeit
 def nyquistFrequency(data: np.ndarray) -> float:
     return float(1/(2*np.mean(np.diff(data[0]))))
 
@@ -30,6 +35,7 @@ def findAndRemoveMaxFrequency(lightCurve: np.ndarray, ampSpectrum: np.ndarray) -
 
     return popt,retLightCurve
 
+@timeit
 def computeSignalToNoise(ampSpectrum: np.ndarray, windowSize: float) -> float:
     y = ampSpectrum[1]
     x = ampSpectrum[0]
@@ -42,7 +48,7 @@ def computeSignalToNoise(ampSpectrum: np.ndarray, windowSize: float) -> float:
     maxVal = y[abs(y - max(y)) < 10**-6][0]
     return float(maxVal/meanValue)
 
-
+@timeit
 def findNextMinimas(yData: np.ndarray) -> Tuple[int,int]:
     index = int(np.where(abs(yData - max(yData)) < 10**-6)[0][0])
     minimaFound = False
@@ -64,13 +70,14 @@ def findNextMinimas(yData: np.ndarray) -> Tuple[int,int]:
     return lowerMinima,upperMinima
 
 
-
 def checkMinima(yData: np.ndarray, counter: int) -> bool:
     return yData[counter] < yData[counter + 1] and yData[counter] < yData[counter- 1]
+
 
 def sin(x: np.ndarray, amp:float, f: float, phase: float) -> np.ndarray:
     return amp * np.sin(2*np.pi * f * x + phase)
 
+@timeit
 def recursiveFrequencyFinder(data: np.ndarray, snrCriterion: float, windowSize: float, path: str = "",
                              **kwargs):
     snr = 100
@@ -85,12 +92,13 @@ def recursiveFrequencyFinder(data: np.ndarray, snrCriterion: float, windowSize: 
         snr = computeSignalToNoise(amp, windowSize)
         fit,data = findAndRemoveMaxFrequency(data,amp)
         print("Found frequency at "+str(fit[1])+" with snr "+str(snr))
+        savePath = path+"results/"+str(int(data[0][0]))+"_"+str(int(max(data[0])))+"/"
+        fileNames = "amplitude_spectrum_f_"+str(len(frequencyList))
         if saveStuff:
-            saveAmpSpectrumAndImage(amp,path+"results/"+str(int(data[0][0]))+"_"+str(int(max(data[0])))+"/"
-                                    ,"amplitude_spectrum_f_"+str(len(frequencyList)))
+            saveAmpSpectrumAndImage(amp,savePath,fileNames)
 
-    saveAmpSpectrumAndImage(amp,path+"results/"+str(int(data[0][0]))+"_"+str(int(max(data[0])))+"/"
-                            ,"amplitude_f_"+str(len(frequencyList)))
+    if kwargs['mode'] == 'Normal':
+        saveAmpSpectrumAndImage(amp, savePath, fileNames)
 
 
     return frequencyList

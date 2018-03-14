@@ -2,7 +2,9 @@ from files import *
 from timeseries import *
 import warnings
 from stem.util import term
+from support import *
 
+@timeit
 def run(file: str, snrCriterion: float, windowSize: float, **kwargs: dict):
     """
     This function perfomrs a full analysis of a given star. Initially it will split up the dataset according to
@@ -47,5 +49,6 @@ def run(file: str, snrCriterion: float, windowSize: float, **kwargs: dict):
         print("Frequencies: "+str(frequencyList))
         result[(data[0][0],max(data[0]))] = frequencyList
 
+    waitForProcessesFinished()
     writeResults("results/results.txt",result)
 

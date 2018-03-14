@@ -54,7 +54,7 @@ def testWriteFile(value,tmpdir_factory):
     path= tmpdir_factory.mktemp('')
     result = {}
     for data in dataList:
-        frequencyList = recursiveFrequencyFinder(data, (0,50), 4, 2,path=path)
+        frequencyList = recursiveFrequencyFinder(data, 4, 2,path=path,frequencyRange=(0,50))
         result[(data[0][0], max(data[0]))] = frequencyList
 
     writeResults(str(dir),result)

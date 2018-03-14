@@ -1,4 +1,5 @@
 {
+  "test_files.py": true,
   "test_files.py::testGetSplitsMax[value0]": true,
   "test_files.py::testGetSplitsMax[value1]": true,
   "test_files.py::testGetSplitsMax[value2]": true,
@@ -18,6 +19,7 @@
   "test_files.py::testWriteFile[value1]": true,
   "test_files.py::testWriteFile[value2]": true,
   "test_files.py::testWriteFile[value3]": true,
+  "test_timeseries.py": true,
   "test_timeseries.py::testRecursiveStuff[value0]": true,
   "test_timeseries.py::testRecursiveStuff[value1]": true,
   "test_timeseries.py::testRecursiveStuff[value2]": true

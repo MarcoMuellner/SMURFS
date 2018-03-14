@@ -2,7 +2,9 @@ import warnings
 warnings.simplefilter(action='ignore',category=FutureWarning)
 from plotnine import *
 import pandas as pd
+from support import *
 
+@timeit
 def plotCustom(title, data, **kwargs):
     p = ggplot()
     for name,(data,linestyle,linetype) in data.items():
