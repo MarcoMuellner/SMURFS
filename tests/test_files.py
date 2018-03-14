@@ -59,6 +59,3 @@ def testWriteFile(value,tmpdir_factory):
 
     writeResults(str(dir),result)
     assert os.path.exists(str(dir))
-
-
-

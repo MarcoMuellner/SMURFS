@@ -88,9 +88,14 @@ def writeResults(file: str, data: Dict[Tuple[float,float],List[Tuple[float,float
         f.write("Lowerrange Upperrange\n")
         for key,value in data.items():
             f.write(str(key[0]) + " " + str(key[1])+"\n")
-            f.write("   frequency snr"+"\n")
+            f.write("   frequency snr amp phase"+"\n")
+
             for i in value:
-                f.write("   "+str(i[0])+" "+str(i[1])+"\n")
+                text = "    "
+                for j in i:
+                    text +=str(j)+" "
+                text +="\n"
+                f.write(text)
 
 @timeit
 def createPath(path):

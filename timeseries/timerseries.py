@@ -10,6 +10,8 @@ from multiprocessing import Process
 
 @timeit
 def calculateAmplitudeSpectrum(data: np.ndarray, range: Tuple[float,float] = (0, 50)) -> np.ndarray:
+    if range[0] > range[1]:
+        raise ValueError("Lower frequency range must be smaller than bigger frequency range")
     ls = LombScargle(data[0],data[1],normalization='psd')
     max_frequency = range[1] if range[1] < nyquistFrequency(data) else nyquistFrequency(data)
     f,p = ls.autopower(minimum_frequency=range[0],maximum_frequency=max_frequency,samples_per_peak=100)
@@ -31,6 +33,11 @@ def findAndRemoveMaxFrequency(lightCurve: np.ndarray, ampSpectrum: np.ndarray) -
     arr = [maxY,maxX,0]
 
     popt,pcov = curve_fit(sin,lightCurve[0],lightCurve[1],p0 = arr)
+
+    if popt[0] < 0:
+        popt[0] = abs(popt[0])
+        popt[2] += -np.pi if popt[2] > np.pi else np.pi
+
     retLightCurve = np.array((lightCurve[0],lightCurve[1]-sin(lightCurve[0],*popt)))
 
     return popt,retLightCurve
@@ -84,14 +91,14 @@ def recursiveFrequencyFinder(data: np.ndarray, snrCriterion: float, windowSize: 
     frequencyList = []
     while(snr > snrCriterion):
         try:
-            frequencyList.append((fit[1],snr))
+            frequencyList.append((fit[1],snr,fit[0],fit[2],))
             saveStuff = True if kwargs['mode'] == 'Full' else False
         except:
             saveStuff = True
         amp = calculateAmplitudeSpectrum(data,kwargs['frequencyRange'])
         snr = computeSignalToNoise(amp, windowSize)
         fit,data = findAndRemoveMaxFrequency(data,amp)
-        print("Found frequency at "+str(fit[1])+" with snr "+str(snr))
+        print("Found frequency at "+str(fit[1])+" with snr "+str(snr), "amp "+str(fit[0])+" phase "+str(fit[2]))
         savePath = path+"results/"+str(int(data[0][0]))+"_"+str(int(max(data[0])))+"/"
         fileNames = "amplitude_spectrum_f_"+str(len(frequencyList))
         if saveStuff:

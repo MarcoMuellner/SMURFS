@@ -12,7 +12,7 @@ parser.add_argument("-fr","--frequencyRange",help="Optional parameter that descr
                                                   "The application will only check within this parameters if given. "
                                                   "Per default this parameter is set from 0 to Nyquist frequency."
                                                   "Please enter it in a form of a tuple (lower,higher).",
-                    type=tuple,default=(0,50))
+                    type=str,default=(0,50))
 parser.add_argument("-trs","--timeRangeSplit",help="Optional parameter that describes the split within the time range."
                                                    "This can be used to get multiple amplitude spectra for the "
                                                    "lightcurve, split up within the time Range. A parameter could be "
@@ -32,10 +32,14 @@ parser.add_argument("-om","--outputMode",help="Optional parameter that defines w
                                               "Normal.",
                     type=str,choices=["Normal","Full"],default="Normal")
 
+
 args = parser.parse_args()
 
+fData = args.frequencyRange.split(",")
+frequencyRange = (float(fData[0]),float(fData[1]))
+
 run(args.fileName,args.snr,windowSize=args.windowSize
-                            ,frequencyRange=args.frequencyRange
+                            ,frequencyRange=frequencyRange
                             ,timeRange=args.timeRangeSplit
                             ,overlap=args.overlap
                             ,outputMode=args.outputMode)
