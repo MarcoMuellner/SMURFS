@@ -89,6 +89,7 @@ def recursiveFrequencyFinder(data: np.ndarray, snrCriterion: float, windowSize: 
                              **kwargs):
     snr = 100
     frequencyList = []
+    print(term.format("List of frequencys, amplitudes, phases, S/N",term.Color.CYAN))
     while(snr > snrCriterion):
         try:
             frequencyList.append((fit[1],snr,fit[0],fit[2],))
@@ -98,7 +99,7 @@ def recursiveFrequencyFinder(data: np.ndarray, snrCriterion: float, windowSize: 
         amp = calculateAmplitudeSpectrum(data,kwargs['frequencyRange'])
         snr = computeSignalToNoise(amp, windowSize)
         fit,data = findAndRemoveMaxFrequency(data,amp)
-        print("Found frequency at "+str(fit[1])+" with snr "+str(snr), "amp "+str(fit[0])+" phase "+str(fit[2]))
+        print(term.format(str(fit[1])+"     "+str(fit[0])+"     "+str(fit[2])+"    "+str(snr), term.Color.CYAN))
         savePath = path+"results/"+str(int(data[0][0]))+"_"+str(int(max(data[0])))+"/"
         fileNames = "amplitude_spectrum_f_"+str(len(frequencyList))
         if saveStuff:
