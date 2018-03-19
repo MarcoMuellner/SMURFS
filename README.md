@@ -1,4 +1,4 @@
-# SMURFS ![Travis Status](https://travis-ci.org/muma7490/smurf.svg?token=8v1in8xqWD2uEu8JH1Q7&branch=master)
+# SMURFS [![Build Status](https://travis-ci.org/muma7490/SMURFS.svg?branch=master)](https://travis-ci.org/muma7490/SMURFS)
 ![SMURFS Image](https://i.imgur.com/wWe1q0y.png)
 
 **SMURFS** (**SM**art **U**se**R** **F**requency analy**S**er) is a simple program, that allows for a quick statistical analysis of variable stars 
