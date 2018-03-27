@@ -40,7 +40,7 @@ if __name__ == '__main__':
 
     run(args.fileName,args.snr,windowSize=args.windowSize
                                 ,frequencyRange=frequencyRange
-                                ,timeRange=args.timeRangeSplit
+                                ,timeRange=args.timeBaseSplit
                                 ,overlap=args.overlap
                                 ,outputMode=args.outputMode)
 

@@ -39,7 +39,9 @@ def run(file: str, snrCriterion: float, windowSize: float, **kwargs: dict):
     result = {}
     createPath("results/")
     for data in splitLists:
-        print(term.format("Calculation from " + str(data[0][0]) + " to " + str(max(data[0])), term.Color.GREEN) + " c/d")
+        print(term.format("Time base from " + str(int(data[0][0])) + " to " + str(int(max(data[0])))+ " days", term.Color.GREEN) )
+        print(term.format("Calculation from "+str(kwargs['frequencyRange'][0])+"c/d to "+str(kwargs['frequencyRange'][1])+"c/d",term.Color.GREEN))
+
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             frequencyList = recursiveFrequencyFinder(data,snrCriterion,windowSize

@@ -10,7 +10,7 @@ for req in reqs:
 
 setup(
     name='smurfs',
-    version='0.1.4',
+    version='0.1.5',
     packages=find_packages(exclude=["*test","dist","build","venv"]),
     url='https://github.com/muma7490/SMURFS',
     license='MIT',
