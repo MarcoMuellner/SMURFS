@@ -13,29 +13,34 @@ It is assumed that *git*,*python3* and *pip* are installed. If not, follow the i
 [git](https://git-scm.com/), [python](https://www.python.org/) and [pip](https://pip.pypa.io/en/stable/installing/).
 
 ## Installation
-To use SMURFS, simply clone the repository with
-```
-git clone https://github.com/muma7490/SMURFS/
-```
 It is recommended to create a new virtualenvironment.
 ```
 cd SMURFS/
 python3 -m venv venv/
 source venv/bin/activate
 ```
-Afterwards install all necessary packages using pip
+Afterwarts, simply install it using pip
 ```
-pip install -r requirements.txt
+pip install smurfs
 ```
-And you are set to go.
-
 ## Usage
+There are two ways to access SMURFS. The recommended version is using
+it as a module, as you can call this at any place on your computer:
+```
+python -m smurfs
+```
+
+You can also use it via main.py
+```
+python __main.py__
+```
+
 All possible commandline parameters can be accessed using the help flag
 ```
-python main.py -h
+python -m smurfs -h
 ```
 At least you need to provide the fileName, signal to noise ration and windowsize. For example
 ```
-python main.py tests/testFile.dat 4 2
+python -m smurfs tests/testFile.dat 4 2
 ```
 To define chunks provide the timerangesplit and overlap parameters.
