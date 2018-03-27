@@ -9,7 +9,6 @@ for req in reqs:
     pip.main(["install", req])
 
 setup(
-    setup_requires=['setuptools-markdown'],
     name='smurfs',
     version='0.1.4',
     packages=find_packages(exclude=["*test","dist","build","venv"]),
