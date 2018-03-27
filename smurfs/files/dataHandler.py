@@ -1,11 +1,9 @@
 import numpy as np
-import os
-from support import *
+from smurfs.support import *
 import warnings
 with warnings.catch_warnings():
     from plotnine import *
 from typing import List,Dict,Tuple
-from multiprocessing import Process
 
 @timeit
 def normalizeData(data: np.ndarray) -> np.ndarray:

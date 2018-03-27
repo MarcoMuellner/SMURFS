@@ -3,10 +3,8 @@ from astropy.stats import LombScargle
 from scipy.optimize import curve_fit
 from typing import Tuple,List
 
-from files import saveAmpSpectrumAndImage
-from support import *
-
-from multiprocessing import Process
+from smurfs.files import saveAmpSpectrumAndImage
+from smurfs.support import *
 
 @timeit
 def calculateAmplitudeSpectrum(data: np.ndarray, range: Tuple[float,float] = (0, 50)) -> np.ndarray:

@@ -1,8 +1,8 @@
-from files import *
-from timeseries import *
+from smurfs.files import *
+from smurfs.timeseries import *
 import warnings
 from stem.util import term
-from support import *
+from smurfs.support import *
 
 @timeit
 def run(file: str, snrCriterion: float, windowSize: float, **kwargs: dict):
@@ -39,7 +39,7 @@ def run(file: str, snrCriterion: float, windowSize: float, **kwargs: dict):
     result = {}
     createPath("results/")
     for data in splitLists:
-        print(term.format("Time range from " + str(data[0][0]) + " to " + str(max(data[0])), term.Color.GREEN))
+        print(term.format("Calculation from " + str(data[0][0]) + " to " + str(max(data[0])), term.Color.GREEN) + " c/d")
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             frequencyList = recursiveFrequencyFinder(data,snrCriterion,windowSize

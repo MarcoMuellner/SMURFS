@@ -1,14 +1,13 @@
 import pytest
-from files import *
-import numpy as np
-from timeseries import *
+from smurfs.files import *
+from smurfs.timeseries import *
 
 def getSin(offset,amp,frequency):
     t = np.linspace(0, 1, 2000)
     y = offset + amp*np.sin(2*np.pi*frequency*t)
     return np.array((t,y))
 
-testCasesDataReduction = [getSin(0,1,5),getSin(5,1,5),getSin(0,1,5) + getSin(0,2,10),np.loadtxt("tests/testFile.dat").T]
+testCasesDataReduction = [getSin(0,1,5),getSin(5,1,5),getSin(0,1,5) + getSin(0,2,10),np.loadtxt("smurf/tests/testFile.dat").T]
 
 @pytest.mark.parametrize("value",["file1","file2"])
 def testReadDataFailed(value):
@@ -17,7 +16,7 @@ def testReadDataFailed(value):
 
 
 def testReadData():
-    data = readData("tests/testFile.dat")
+    data = readData("smurf/tests/testFile.dat")
     assert isinstance(data,np.ndarray)
     assert len(data) == 2
 

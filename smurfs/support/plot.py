@@ -2,7 +2,7 @@ import warnings
 warnings.simplefilter(action='ignore',category=FutureWarning)
 from plotnine import *
 import pandas as pd
-from support import *
+from smurfs.support import *
 
 @timeit
 def plotCustom(title, data, **kwargs):
