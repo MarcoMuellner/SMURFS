@@ -27,16 +27,26 @@ def nyquistFrequency(data: np.ndarray) -> float:
 def findAndRemoveMaxFrequency(lightCurve: np.ndarray, ampSpectrum: np.ndarray) -> Tuple[List[float],np.ndarray]:
     maxY = max(ampSpectrum[1])
     maxX = ampSpectrum[0][abs(ampSpectrum[1] - max(ampSpectrum[1])) < 10**-4][0]
+    popt = [-1,-1,-1]
+    arr = [maxY, maxX, 0]
 
-    arr = [maxY,maxX,0]
+    while popt[0] < 0 or popt[1] < 0:
+        try:
+            popt,pcov = curve_fit(sin,lightCurve[0],lightCurve[1],p0 = arr)
+        except RuntimeError:
+            print(term.format("Failed to find a good fit for Frequency "+str(maxX)+"c/d",term.Color.CYAN))
+            raise RuntimeError
 
-    popt,pcov = curve_fit(sin,lightCurve[0],lightCurve[1],p0 = arr)
 
-    if popt[0] < 0:
-        popt[0] = abs(popt[0])
-        popt[2] += -np.pi if popt[2] > np.pi else np.pi
 
-    retLightCurve = np.array((lightCurve[0],lightCurve[1]-sin(lightCurve[0],*popt)))
+        #if amp < 0 -> move sin to plus using the phase by adding pi
+        if popt[0] < 0 or popt[1] < 0:
+            popt[0] = abs(popt[0])
+            popt[1] = abs(popt[1])
+            popt[2] += -np.pi if popt[2] > np.pi else np.pi
+        arr = popt
+
+        retLightCurve = np.array((lightCurve[0],lightCurve[1]-sin(lightCurve[0],*popt)))
 
     return popt,retLightCurve
 
@@ -82,12 +92,29 @@ def checkMinima(yData: np.ndarray, counter: int) -> bool:
 def sin(x: np.ndarray, amp:float, f: float, phase: float) -> np.ndarray:
     return amp * np.sin(2*np.pi * f * x + phase)
 
+def cutoffCriterion(frequencyList:List):
+    if len(frequencyList) < similarFrequenciesCount:
+        return True
+
+    lastFrequencies = np.array(frequencyList[-similarFrequenciesCount:])
+    stdDev = lastFrequencies.std()
+    if stdDev < similarityStdDev:
+        print(term.format("The last "+str(similarFrequenciesCount)+" where to similar, with a standard deviation of "
+                          +str(stdDev)+". Stopping analysis for this set",term.Color.RED))
+        return False
+    else:
+        return True
+
+
 @timeit
 def recursiveFrequencyFinder(data: np.ndarray, snrCriterion: float, windowSize: float, path: str = "",
                              **kwargs):
     snr = 100
     frequencyList = []
     print(term.format("List of frequencys, amplitudes, phases, S/N",term.Color.CYAN))
+    savePath = path + "results/{0:0=3d}".format(int(data[0][0]))
+    savePath += "_{0:0=3d}/".format(int(max(data[0])))
+
     while(snr > snrCriterion):
         try:
             frequencyList.append((fit[1],snr,fit[0],fit[2],))
@@ -97,11 +124,17 @@ def recursiveFrequencyFinder(data: np.ndarray, snrCriterion: float, windowSize: 
         amp = calculateAmplitudeSpectrum(data,kwargs['frequencyRange'])
         snr = computeSignalToNoise(amp, windowSize)
         fit,data = findAndRemoveMaxFrequency(data,amp)
+
         print(term.format(str(fit[1])+"c/d     "+str(fit[0])+"     "+str(fit[2])+"    "+str(snr), term.Color.CYAN))
-        savePath = path+"results/"+str(int(data[0][0]))+"_"+str(int(max(data[0])))+"/"
+
         fileNames = "amplitude_spectrum_f_"+str(len(frequencyList))
+
         if saveStuff:
             saveAmpSpectrumAndImage(amp,savePath,fileNames)
+
+        if not cutoffCriterion(frequencyList):
+            break
+
 
     try:
         if kwargs['mode'] == 'Normal':

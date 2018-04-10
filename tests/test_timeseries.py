@@ -23,6 +23,11 @@ testCasesFrequencyList = [(getSin(1, 5), 1)
             , (getSin(2,10),1)
             , (np.loadtxt("tests/testFile.dat").T,13)]
 
+testCasesCutoffCriterion = [(np.array([0.1,0.1,0.1,0.2,0,0.3,0.2,0.1,0.2,0.5]),True),
+                            (np.array([0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1]),False),
+                            (np.array([0.1,10,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1]),True),
+                            ]
+
 @pytest.mark.parametrize("value", testCasesFrequency)
 def testCalculateAmplitudeSpectrum(value):
     data = value[0]
@@ -71,7 +76,11 @@ def testSNR(value):
     data[1] -= np.mean(data[1])
 
     amp = calculateAmplitudeSpectrum(data)
-    fit,data = findAndRemoveMaxFrequency(data,amp)
+    _ , _ = findAndRemoveMaxFrequency(data,amp)
     snr = computeSignalToNoise(amp,2)
     assert abs(checklist - snr) < 10**-6
+
+@pytest.mark.parametrize("value",testCasesCutoffCriterion)
+def testCutoffCriterion(value):
+    assert value[1] == cutoffCriterion(value[0])
 

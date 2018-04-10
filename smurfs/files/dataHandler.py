@@ -52,11 +52,36 @@ def getSplits(data: np.ndarray, timeRange: float = -1, overlap: float = 0) -> Li
     i = 0
     while(i*(timeRange-overlap)+timeRange <= max(data[0])):
         lowerIndex = find_nearest(data[0],i*(timeRange-overlap))
-        upperIndex = find_nearest(data[0],i*(timeRange-overlap)+timeRange)
+        upperIndex = find_nearest(data[0],i*(timeRange-overlap)+timeRange)+1
+
+        #this case can happen, if the full range is used, and no overlap is present
+        if upperIndex == len(data[0]):
+            upperIndex -= 1
+
+        i += 1
+
+        gapRatio= getGapRatio(data,lowerIndex,upperIndex)
+        if gapRatio > cutoffRatio:
+            print(term.format("Ignoring time base from "+str(int(data[0][lowerIndex]))+" to "+str(int(data[0][upperIndex]))+
+                              " because the gap Ratio is greater 0.5. Gap Ratio is "+str(gapRatio),term.Color.RED))
+
+            continue
         array = np.array((data[0][lowerIndex:upperIndex],data[1][lowerIndex:upperIndex]))
         dataPoints.append(array)
-        i +=1
+
     return dataPoints
+
+@timeit
+def getGapRatio(data: np.ndarray, lowerIndex:int, upperIndex:int):
+    gaps = data[0][lowerIndex+1:upperIndex]-data[0][lowerIndex:upperIndex-1]
+    (values, counts) = np.unique(data[0][1:]-data[0][:-1], return_counts=True)
+    ind = np.argmax(counts)
+    # adding 0.1, just to be sure not to get very small flukes in the observation time
+    totalGap = np.sum(gaps[gaps>values[ind]+0.1])
+
+    return totalGap/(data[0][upperIndex]-data[0][lowerIndex])
+
+
 
 @timeit
 def find_nearest(array: np.ndarray, value: float) -> int:
