@@ -71,11 +71,25 @@ def getSplits(data: np.ndarray, timeRange: float = -1, overlap: float = 0) -> Li
 
     return dataPoints
 
+def getMostCommonStep(data: np.ndarray):
+    (values, counts) = np.unique(np.diff(data[0]), return_counts=True)
+    ind = np.argmax(counts)
+    return ind,values
+
 @timeit
 def getGapRatio(data: np.ndarray, lowerIndex:int, upperIndex:int):
-    gaps = data[0][lowerIndex+1:upperIndex]-data[0][lowerIndex:upperIndex-1]
-    (values, counts) = np.unique(data[0][1:]-data[0][:-1], return_counts=True)
-    ind = np.argmax(counts)
+    """
+    Calculates the ratio between the "empty" space within a given dataset to its datapoints. For example
+    an array containing the datapoints 0,1,2,3,7,8,9 would return 0.3 as gap ratio, as one third of the data is not
+    populated. To do this, it calculates the most common difference between two points, and sums up deviations for gaps
+    bigger than this value.
+    :param data: The dataset which needs to be analyzed
+    :param lowerIndex: The lower index of the subset that is to be analyzed
+    :param upperIndex: The upper index of the subset that is to be analyzed
+    :return: A value between 0 and 1. The higher this value is, the worse the dataset is.
+    """
+    gaps = np.diff(data[0][lowerIndex:upperIndex])
+    ind,values = getMostCommonStep(data)
     # adding 0.1, just to be sure not to get very small flukes in the observation time
     totalGap = np.sum(gaps[gaps>values[ind]+0.1])
 
@@ -86,7 +100,7 @@ def getGapRatio(data: np.ndarray, lowerIndex:int, upperIndex:int):
 @timeit
 def find_nearest(array: np.ndarray, value: float) -> int:
     """
-    Fins the index of the nearest value to a value in an array.
+    Finds the index of the nearest value to a value in an array.
     :param array Array to be checked in:
     :param value value that needs to be found in array:
     :return index of nearest value:

@@ -7,34 +7,74 @@ from smurfs.files import saveAmpSpectrumAndImage
 from smurfs.support import *
 
 @timeit
-def calculateAmplitudeSpectrum(data: np.ndarray, range: Tuple[float,float] = (0, 50)) -> np.ndarray:
-    if range[0] > range[1]:
-        raise ValueError("Lower frequency range must be smaller than bigger frequency range")
+def calculateAmplitudeSpectrum(data: np.ndarray, frequencyBoundary: Tuple[float, float] = (0, 50)) -> np.ndarray:
+    """
+    This function computes a periodogram using the LombScargle algorithm. There are different implementations available
+    and we leave it up to astropy to decide which one should be applied
+    :param data: Temporal dataset, an observation by some kind instrument. First axis time, second axis flux
+    :param frequencyBoundary: Boundary that should be considered when computing the spectrum
+    :return: 2-D Array, containing frequency (first array) and amplitude (second array)
+    """
+    if frequencyBoundary[0] > frequencyBoundary[1]:
+        raise ValueError(b"f_min has to be smaller than f_max!")
+
+    #create object
     ls = LombScargle(data[0],data[1],normalization='psd')
-    max_frequency = range[1] if range[1] < nyquistFrequency(data) else nyquistFrequency(data)
-    f,p = ls.autopower(minimum_frequency=range[0],maximum_frequency=max_frequency,samples_per_peak=100)
+
+    # if defined max frequency is bigger than the nyquist frequency, cutoff at nyquist
+    max_frequency = frequencyBoundary[1] if frequencyBoundary[1] < nyquistFrequency(data) else nyquistFrequency(data)
+
+    #compute Spectrum
+    f,p = ls.autopower(minimum_frequency=frequencyBoundary[0], maximum_frequency=max_frequency, samples_per_peak=100)
+
+    #normalization of psd in order to get good amplitudes
     p = np.sqrt(4/len(data[0]))*np.sqrt(p)
-    p = p[1:len(p)]
-    f = f[1:len(f)]
-    p = p[f < range[1]]
-    f = f[f < range[1]]
+
+    #removing first item
+    p = p[1:]
+    f = f[1:]
+
+    #restricting values to upper boundary
+    p = p[f < frequencyBoundary[1]]
+    f = f[f < frequencyBoundary[1]]
+
     return np.array((f,p))
 
 @timeit
 def nyquistFrequency(data: np.ndarray) -> float:
+    """
+    Computes Nyquist frequency.
+    :param data: Dataset, in time domain.
+    :return: Nyquist frequency of dataset
+    """
     return float(1/(2*np.mean(np.diff(data[0]))))
 
-def findAndRemoveMaxFrequency(lightCurve: np.ndarray, ampSpectrum: np.ndarray) -> Tuple[List[float],np.ndarray]:
+def findMaxPowerFrequency(ampSpectrum: np.ndarray):
     maxY = max(ampSpectrum[1])
-    maxX = ampSpectrum[0][abs(ampSpectrum[1] - max(ampSpectrum[1])) < 10**-4][0]
+    maxX = ampSpectrum[0][abs(ampSpectrum[1] - max(ampSpectrum[1])) < 10 ** -4][0]
+
+    return maxY,maxX
+
+def findAndRemoveMaxFrequency(lightCurve: np.ndarray, ampSpectrum: np.ndarray) -> Tuple[List[float],np.ndarray]:
+    """
+    Finds the frequency with maximum power in the spectrum, fits it to the dataset and than removes this frequency
+    from the initial dataset.
+    :param lightCurve: Lightcurve dataset. This is the data where the fit is applied to, and its removed version is
+    returned
+    :param ampSpectrum: Amplitude spectrum of lightCurve. Should be computed with the same dataset that is provided here
+    :return: Fit parameters, Reduced lightcurve
+    """
+    maxY,maxX = findMaxPowerFrequency(ampSpectrum)
     popt = [-1,-1,-1]
     arr = [maxY, maxX, 0]
 
+    # First fit could provide negative values for amplitude and frequency if the phase is moved by pi. Therefore run
+    # again, with phase moved by pi as long as we don't have positive values for freuqency and amplitude
     while popt[0] < 0 or popt[1] < 0:
         try:
             popt,pcov = curve_fit(sin,lightCurve[0],lightCurve[1],p0 = arr)
         except RuntimeError:
-            print(term.format("Failed to find a good fit for Frequency "+str(maxX)+"c/d",term.Color.CYAN))
+            print(term.format("Failed to find a good fit for Frequency "+str(maxX)+"c/d",term.Color.RED))
             raise RuntimeError
 
 
@@ -52,8 +92,16 @@ def findAndRemoveMaxFrequency(lightCurve: np.ndarray, ampSpectrum: np.ndarray) -
 
 @timeit
 def computeSignalToNoise(ampSpectrum: np.ndarray, windowSize: float) -> float:
+    """
+    Computes signal to noise ratio at frequency f.
+    :param ampSpectrum:
+    :param windowSize:
+    :return:
+    """
     y = ampSpectrum[1]
     x = ampSpectrum[0]
+
+    #find minimas adjacent to maxima of y
     lowerMinima,upperMinima = findNextMinimas(y)
     singleStep = np.mean(np.diff(x))
     length_half = int(windowSize/singleStep)
@@ -61,6 +109,7 @@ def computeSignalToNoise(ampSpectrum: np.ndarray, windowSize: float) -> float:
     data = np.append(y[lowerMinima - length_half:lowerMinima],y[upperMinima:upperMinima+length_half])
     meanValue = np.mean(data)
     maxVal = y[abs(y - max(y)) < 10**-6][0]
+
     return float(maxVal/meanValue)
 
 @timeit
