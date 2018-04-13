@@ -47,6 +47,8 @@ def run(file: str, snrCriterion: float, windowSize: float, **kwargs: dict):
             frequencyList = recursiveFrequencyFinder(data,snrCriterion,windowSize
                                                      ,frequencyRange=kwargs['frequencyRange'],mode=kwargs['outputMode'])
             result[(data[0][0], max(data[0]))] = frequencyList
+            if defines.dieGracefully:
+                break
 
 
 

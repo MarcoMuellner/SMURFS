@@ -59,13 +59,15 @@ def getSplits(data: np.ndarray, timeRange: float = -1, overlap: float = 0) -> Li
             upperIndex -= 1
 
         i += 1
+        if timeRange != max(data[0]):
+            gapRatio= getGapRatio(data,lowerIndex,upperIndex)
+            if gapRatio > cutoffRatio:
+                print(term.format("Ignoring time base from "+str(int(data[0][lowerIndex]))+" to "+str(int(data[0][upperIndex]))+
+                                  " because the gap Ratio is greater 0.5. Gap Ratio is "+str(gapRatio),term.Color.RED))
 
-        gapRatio= getGapRatio(data,lowerIndex,upperIndex)
-        if gapRatio > cutoffRatio:
-            print(term.format("Ignoring time base from "+str(int(data[0][lowerIndex]))+" to "+str(int(data[0][upperIndex]))+
-                              " because the gap Ratio is greater 0.5. Gap Ratio is "+str(gapRatio),term.Color.RED))
-
-            continue
+                continue
+        else:
+            print(term.format("Ommited gap ratio. Time Range is "+str(timeRange)+",max data "+str(max(data[0])),term.Color.CYAN))
         array = np.array((data[0][lowerIndex:upperIndex],data[1][lowerIndex:upperIndex]))
         dataPoints.append(array)
 

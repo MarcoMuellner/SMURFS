@@ -158,38 +158,43 @@ def cutoffCriterion(frequencyList:List):
 @timeit
 def recursiveFrequencyFinder(data: np.ndarray, snrCriterion: float, windowSize: float, path: str = "",
                              **kwargs):
-    snr = 100
-    frequencyList = []
-    print(term.format("List of frequencys, amplitudes, phases, S/N",term.Color.CYAN))
-    savePath = path + "results/{0:0=3d}".format(int(data[0][0]))
-    savePath += "_{0:0=3d}/".format(int(max(data[0])))
-
-    while(snr > snrCriterion):
-        try:
-            frequencyList.append((fit[1],snr,fit[0],fit[2],))
-            saveStuff = True if kwargs['mode'] == 'Full' else False
-        except:
-            saveStuff = True
-        amp = calculateAmplitudeSpectrum(data,kwargs['frequencyRange'])
-        snr = computeSignalToNoise(amp, windowSize)
-        fit,data = findAndRemoveMaxFrequency(data,amp)
-
-        print(term.format(str(fit[1])+"c/d     "+str(fit[0])+"     "+str(fit[2])+"    "+str(snr), term.Color.CYAN))
-
-        fileNames = "amplitude_spectrum_f_"+str(len(frequencyList))
-
-        if saveStuff:
-            saveAmpSpectrumAndImage(amp,savePath,fileNames)
-
-        if not cutoffCriterion(frequencyList):
-            break
-
-
     try:
-        if kwargs['mode'] == 'Normal':
-            saveAmpSpectrumAndImage(amp, savePath, fileNames)
-    except KeyError:
-        pass
+        snr = 100
+        frequencyList = []
+        print(term.format("List of frequencys, amplitudes, phases, S/N",term.Color.CYAN))
+        savePath = path + "results/{0:0=3d}".format(int(data[0][0]))
+        savePath += "_{0:0=3d}/".format(int(max(data[0])))
+
+        while(snr > snrCriterion):
+            try:
+                frequencyList.append((fit[1],snr,fit[0],fit[2],))
+                saveStuff = True if kwargs['mode'] == 'Full' else False
+            except:
+                saveStuff = True
+            amp = calculateAmplitudeSpectrum(data,kwargs['frequencyRange'])
+            snr = computeSignalToNoise(amp, windowSize)
+            fit,data = findAndRemoveMaxFrequency(data,amp)
+
+            print(term.format(str(fit[1])+"c/d     "+str(fit[0])+"     "+str(fit[2])+"    "+str(snr), term.Color.CYAN))
+
+            fileNames = "amplitude_spectrum_f_"+str(len(frequencyList))
+
+            if saveStuff:
+                saveAmpSpectrumAndImage(amp,savePath,fileNames)
+
+            if not cutoffCriterion(frequencyList):
+                break
+
+
+        try:
+            if kwargs['mode'] == 'Normal':
+                saveAmpSpectrumAndImage(amp, savePath, fileNames)
+        except KeyError:
+            pass
+    except KeyboardInterrupt:
+        print(term.format("Interrupted Run",term.Color.RED))
+        defines.dieGracefully = True
+        return frequencyList
 
 
     return frequencyList
