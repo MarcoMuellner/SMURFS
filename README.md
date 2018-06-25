@@ -24,6 +24,11 @@ Afterwarts, simply install it using pip
 pip install smurfs
 ```
 ## Usage
+Activate the virtualenvironment
+```
+cd SMURFS/
+source venv/bin/activate
+```
 There are two ways to access SMURFS. The recommended version is using
 it as a module, as you can call this at any place on your computer:
 ```
