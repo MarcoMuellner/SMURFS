@@ -47,7 +47,18 @@ def nyquistFrequency(data: np.ndarray) -> float:
     :param data: Dataset, in time domain.
     :return: Nyquist frequency of dataset
     """
-    return float(1/(2*np.mean(np.diff(data[0]))))
+    return float(1/(2*findMostCommonDiff(data[0])))
+
+def findMostCommonDiff(time: np.ndarray) -> float:
+    """
+    Finds the most common time difference between two data points.
+    :param time:
+    :return:
+    """
+    realDiffX = time[1:len(time)] - time[0:len(time) - 1]
+    (values, counts) = np.unique(realDiffX, return_counts=True)
+    mostCommon = values[np.argmax(counts)]
+    return mostCommon
 
 def findMaxPowerFrequency(ampSpectrum: np.ndarray):
     maxY = max(ampSpectrum[1])
@@ -154,16 +165,38 @@ def cutoffCriterion(frequencyList:List):
     else:
         return True
 
+def prepareSpectrogram(spectrum: np.ndarray,timerange: Tuple[float,float]) ->Tuple[np.ndarray,np.ndarray,np.ndarray]:
+    t = np.linspace(timerange[0],timerange[1])
+    f = spectrum[0]
+    i = spectrum[1]
 
-@timeit
+    if defines.maxiLength is None:
+        defines.maxiLength = len(i)
+    elif defines.maxiLength > len(i):
+        i = np.append(i,np.linspace(0,0,num=defines.maxiLength - len(i)))
+    else:
+        i = i[0:defines.maxiLength]
+
+    tmpSpectrum = i
+
+
+    for j in range(0,len(t)-1):
+        i = np.vstack((i,tmpSpectrum))
+
+    return f,t,i
+
+
 def recursiveFrequencyFinder(data: np.ndarray, snrCriterion: float, windowSize: float, path: str = "",
                              **kwargs):
+    frequencyList = None
+    f, t, i = None, None, None
     try:
         snr = 100
         frequencyList = []
         print(term.format("List of frequencys, amplitudes, phases, S/N",term.Color.CYAN))
         savePath = path + "results/{0:0=3d}".format(int(data[0][0]))
         savePath += "_{0:0=3d}/".format(int(max(data[0])))
+
 
         while(snr > snrCriterion):
             try:
@@ -181,6 +214,7 @@ def recursiveFrequencyFinder(data: np.ndarray, snrCriterion: float, windowSize: 
 
             if saveStuff:
                 saveAmpSpectrumAndImage(amp,savePath,fileNames)
+                f,t,i = prepareSpectrogram(amp,(int(data[0][0]),int(np.max(data[0]))))
 
             if not cutoffCriterion(frequencyList):
                 break
@@ -188,13 +222,14 @@ def recursiveFrequencyFinder(data: np.ndarray, snrCriterion: float, windowSize: 
 
         try:
             if kwargs['mode'] == 'Normal':
+                pass
                 saveAmpSpectrumAndImage(amp, savePath, fileNames)
         except KeyError:
             pass
     except KeyboardInterrupt:
         print(term.format("Interrupted Run",term.Color.RED))
         defines.dieGracefully = True
-        return frequencyList
+        return frequencyList,f,t,i
 
 
-    return frequencyList
+    return frequencyList,f,t,i

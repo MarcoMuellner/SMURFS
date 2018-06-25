@@ -10,7 +10,9 @@ def getSin(offset,amp,frequency):
 testCasesDataReduction = [getSin(0,1,5),
                           getSin(5,1,5),
                           getSin(0,1,5) + getSin(0,2,10),
-                          np.loadtxt("tests/testFile.dat").T]
+                          np.loadtxt("tests/testFile.dat").T,
+                          np.loadtxt("tests/testFile_longGaps.dat").T,
+                          ]
 
 testCasesGapTestXValues = [(np.append(np.linspace(0, 10), np.linspace(20, 30)),1/3),
                            (np.append(np.linspace(0, 5), np.linspace(15, 25)),10/25),
@@ -50,7 +52,7 @@ def testGetSplits(value):
     expectedLength = int((max(value[0])-timeRange)/(timeRange-overlap)) +1
 
 
-    assert len(dataList) in [expectedLength,expectedLength-1]
+    assert len(dataList) in [expectedLength,expectedLength-1,expectedLength -2]
 
     for i in range(0,len(dataList)-1):
         assert dataList[i+1][0][0]-max(dataList[i][0]) - overlap < 10**-3
