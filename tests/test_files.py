@@ -11,7 +11,6 @@ testCasesDataReduction = [getSin(0,1,5),
                           getSin(5,1,5),
                           getSin(0,1,5) + getSin(0,2,10),
                           np.loadtxt("tests/testFile.dat").T,
-                          np.loadtxt("tests/testFile_longGaps.dat").T,
                           ]
 
 testCasesGapTestXValues = [(np.append(np.linspace(0, 10), np.linspace(20, 30)),1/3),
