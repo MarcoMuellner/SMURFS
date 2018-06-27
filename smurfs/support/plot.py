@@ -3,6 +3,8 @@ warnings.simplefilter(action='ignore',category=FutureWarning)
 from plotnine import *
 import pandas as pd
 from smurfs.support import *
+import matplotlib.pyplot as pl
+from matplotlib.colors import Colormap
 
 @timeit
 def plotCustom(title, data, **kwargs):
@@ -22,3 +24,11 @@ def plotCustom(title, data, **kwargs):
 
     p = p+ggtitle(title)+xlab(kwargs['xLabel'])+ylab(kwargs['yLabel'])
     return p
+
+
+def plotMesh(f,t,i):
+    pl.pcolormesh(f, t, i,vmin=i.min(),vmax=i.max(),cmap="RdBu_r")
+    pl.xlabel(r"Frequency")
+    pl.ylabel(r"Time")
+    pl.colorbar()
+    pl.savefig("results/dynamic_fourier.png")

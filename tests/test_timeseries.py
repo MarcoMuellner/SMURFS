@@ -84,3 +84,23 @@ def testSNR(value):
 def testCutoffCriterion(value):
     assert value[1] == cutoffCriterion(value[0])
 
+
+def testSpectrogramCreation():
+    fList = []
+    tList = []
+    iList = []
+    with cd("tests/spectrum_files"):
+        for file in os.listdir("."):
+            print("Loading {0}".format(file))
+            time_parts = file.split(".")[0].split("_")[-1].split("-")
+            data = np.loadtxt(file).T
+            f,t,i = prepareSpectrogram(data,(int(time_parts[0]),int(time_parts[0])))
+            fList.append(f)
+            tList.append(t)
+            iList.append(i)
+
+    print("Start plotting")
+
+    f,t,i = combineDatasets(fList,tList,iList)
+    plotMesh(f,t,i)
+

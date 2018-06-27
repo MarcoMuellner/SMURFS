@@ -37,9 +37,9 @@ def run(file: str, snrCriterion: float, windowSize: float, **kwargs: dict):
     splitLists = getSplits(data,kwargs['timeRange'],kwargs['overlap'])
     result = {}
     createPath("results/")
-    fList = None
-    tList = None
-    iList = None
+    fList = []
+    tList = []
+    iList = []
     for data in splitLists:
         print(term.format("Time base from " + str(int(data[0][0])) + " to " + str(int(max(data[0])))+ " days", term.Color.GREEN) )
         print(term.format("Calculation from "+str(kwargs['frequencyRange'][0])+"c/d to "+str(kwargs['frequencyRange'][1])+"c/d",term.Color.GREEN))
@@ -49,26 +49,17 @@ def run(file: str, snrCriterion: float, windowSize: float, **kwargs: dict):
             frequencyList,f,t,i = recursiveFrequencyFinder(data,snrCriterion,windowSize
                                                      ,frequencyRange=kwargs['frequencyRange'],mode=kwargs['outputMode'])
 
-            if fList is None:
-                fList = f
+            fList.append(f)
+            tList.append(t)
+            iList.append(i)
 
-            if tList is None:
-                tList = t
-            else:
-                tList = np.hstack((tList,t))
-
-            if iList is None:
-                iList = i
-            else:
-                iList = np.row_stack((iList,i))
             result[(data[0][0], max(data[0]))] = frequencyList
             if defines.dieGracefully:
                 break
 
-    pl.pcolormesh(fList,tList,iList)
-    pl.xlabel(r"Frequency")
-    pl.ylabel(r"Time")
-    pl.savefig("results/dynamic_fourier.pdf")
+    f,t,i = combineDatasets(fList,tList,iList)
+
+    plotMesh(f,t,i)
 
 
     waitForProcessesFinished()
