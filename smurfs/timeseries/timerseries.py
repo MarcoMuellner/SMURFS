@@ -139,17 +139,22 @@ def findNextMinimas(yData: np.ndarray) -> Tuple[int, int]:
     index = int(np.where(abs(yData - max(yData)) < 10 ** -6)[0][0])
     minimaFound = False
     counter = 1
-    lowerMinima = 0
-    upperMinima = 0
+    lowerMinima = -1
+    upperMinima = -1
     while (minimaFound == False):
         negCounter = index - counter
         posCounter = index + counter
-        if checkMinima(yData, negCounter):
+        if negCounter -1 < 0:
             lowerMinima = negCounter
-        if checkMinima(yData, posCounter):
+        elif checkMinima(yData, negCounter):
+            lowerMinima = negCounter
+
+        if posCounter + 1 >= len(yData):
+            upperMinima = posCounter
+        elif checkMinima(yData, posCounter):
             upperMinima = posCounter
 
-        if lowerMinima != 0 and upperMinima != 0:
+        if lowerMinima != -1 and upperMinima != -1:
             minimaFound = True
         counter += 1
 
