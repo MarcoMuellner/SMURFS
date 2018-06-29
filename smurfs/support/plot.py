@@ -1,6 +1,7 @@
 import warnings
 warnings.simplefilter(action='ignore',category=FutureWarning)
 from plotnine import *
+import numpy as np
 import pandas as pd
 from smurfs.support import *
 import matplotlib.pyplot as pl
@@ -27,8 +28,11 @@ def plotCustom(title, data, **kwargs):
 
 
 def plotMesh(f,t,i):
-    pl.pcolormesh(f, t, i,vmin=i.min(),vmax=i.max(),cmap="RdBu_r")
+    pl.pcolormesh(f, t, i,cmap="inferno")
     pl.xlabel(r"Frequency")
     pl.ylabel(r"Time")
     pl.colorbar()
+    np.savetxt("frequency.txt",f)
+    np.savetxt("time.txt", t)
+    np.savetxt("intensity.txt", i)
     pl.savefig("results/dynamic_fourier.png")

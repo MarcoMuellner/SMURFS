@@ -32,7 +32,7 @@ def calculateAmplitudeSpectrum(data: np.ndarray, frequencyBoundary: Tuple[float,
         max_frequency = frequencyBoundary[1]
 
     # compute Spectrum
-    f, p = ls.autopower(minimum_frequency=frequencyBoundary[0], maximum_frequency=max_frequency, samples_per_peak=100)
+    f, p = ls.autopower(minimum_frequency=frequencyBoundary[0], maximum_frequency=max_frequency, samples_per_peak=50)
 
     # normalization of psd in order to get good amplitudes
     p = np.sqrt(4 / len(data[0])) * np.sqrt(p)
@@ -185,7 +185,7 @@ def cutoffCriterion(frequencyList: List):
 
 
 def prepareSpectrogram(spectrum: np.ndarray, timerange: Tuple[int, int]) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
-    t = np.linspace(timerange[0], timerange[1])
+    t = np.linspace(timerange[0], timerange[1],num=5)
     f = spectrum[0]
     i = spectrum[1]
 
