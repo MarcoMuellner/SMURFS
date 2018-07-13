@@ -1,5 +1,6 @@
 import warnings
 warnings.simplefilter(action='ignore',category=FutureWarning)
+import os
 from plotnine import *
 import numpy as np
 import pandas as pd
@@ -65,4 +66,8 @@ def plotMesh(f,t,i,frequencyList:dict):
     np.savetxt("frequency.txt",f)
     np.savetxt("time.txt", t)
     np.savetxt("intensity.txt", i)
+
+    if not os.path.exists("results"):
+        os.mkdir("results")
+
     fig.savefig("results/dynamic_fourier.png")

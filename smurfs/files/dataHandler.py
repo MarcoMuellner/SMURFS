@@ -179,8 +179,7 @@ def saveAmpSpectrumAndImage(ampSpectrum: np.ndarray, path: str, name: str):
     This function saves the amplitude spectrum and according plots to the results path.
     :param name name of file and image:
     """
-    if not os.path.exists(path):
-        os.mkdir(path)
+    createPath(path)
 
     with cd(path):
         np.savetxt(name+".txt",ampSpectrum.T)
