@@ -102,5 +102,5 @@ def testSpectrogramCreation():
     print("Start plotting")
 
     f,t,i = combineDatasets(fList,tList,iList)
-    plotMesh(f,t,i)
+    plotMesh(f,t,i,None)
 

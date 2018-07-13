@@ -32,7 +32,7 @@ def calculateAmplitudeSpectrum(data: np.ndarray, frequencyBoundary: Tuple[float,
         max_frequency = frequencyBoundary[1]
 
     # compute Spectrum
-    f, p = ls.autopower(minimum_frequency=frequencyBoundary[0], maximum_frequency=max_frequency, samples_per_peak=50)
+    f, p = ls.autopower(minimum_frequency=frequencyBoundary[0], maximum_frequency=max_frequency, samples_per_peak=100)
 
     # normalization of psd in order to get good amplitudes
     p = np.sqrt(4 / len(data[0])) * np.sqrt(p)
