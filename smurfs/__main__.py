@@ -31,6 +31,11 @@ if __name__ == '__main__':
                                                   "full means all amplitudespectra will be plotted & exported. Default is "
                                                   "Normal.",
                         type=str,choices=["Normal","Full"],default="Normal")
+    parser.add_argument("-fm","--frequencyMarker",help="Optional parameter, that can be passed if frequencies should be "
+                                                       "marked in the dynamic fourier spektrum. Frequencies will be plotted "
+                                                       "on top of the plot. Please use a relative path to the call path "
+                                                       "you are currently in",
+                        type=str,default="")
 
 
     args = parser.parse_args()
@@ -42,7 +47,8 @@ if __name__ == '__main__':
                                 ,frequencyRange=frequencyRange
                                 ,timeRange=args.timeBaseSplit
                                 ,overlap=args.overlap
-                                ,outputMode=args.outputMode)
+                                ,outputMode=args.outputMode
+                                ,frequencyMarker=args.frequencyMarker)
 
 
 

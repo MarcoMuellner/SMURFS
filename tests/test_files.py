@@ -20,6 +20,10 @@ testCasesGapTestXValues = [(np.append(np.linspace(0, 10), np.linspace(20, 30)),1
                            (np.append(np.linspace(0, 5), np.linspace(7, 15)), 2 / 15),
                            ]
 
+testFrequencyMarker = [("tests/test_frequencyMarker.txt",None),
+                       ("dumymfile.txt",FileNotFoundError),
+                       (1,AttributeError)]
+
 testCasesGapValues = []
 for data,ratio in testCasesGapTestXValues:
     testCasesGapValues.append((np.array((data, np.sin(data))),ratio))
@@ -83,3 +87,19 @@ def testWriteFile(value,tmpdir_factory):
 def testGapChecker(value):
     gapRatio = getGapRatio(value[0],0,len(value[0][0])-1)
     assert gapRatio - value[1] < 10**-5
+
+@pytest.mark.parametrize("value",testFrequencyMarker)
+def testReadFrequencyMarker(value : Tuple):
+    file,error = value
+
+    if error is None:
+        marker = readFrequencyMarker(file)
+        assert len(marker) == 15
+        for name,value in marker.items():
+            assert isinstance(name,str)
+            assert isinstance(value,float)
+            assert value > 0
+    else:
+        with pytest.raises(error):
+            readFrequencyMarker(file)
+

@@ -4,6 +4,7 @@ import warnings
 with warnings.catch_warnings():
     from plotnine import *
 from typing import List,Dict,Tuple
+from collections import OrderedDict
 
 @timeit
 def normalizeData(data: np.ndarray) -> np.ndarray:
@@ -16,6 +17,33 @@ def normalizeData(data: np.ndarray) -> np.ndarray:
     data[0] -= data[0][0]
     data[1] -= np.mean(data[1])
     return data
+
+@timeit
+def readFrequencyMarker(file: str) -> Dict[str,float]:
+    """
+    Reads frequency Marker from file. First column needs to be the name of the marker, the second column needs to have
+    the according frequency value for the marker.
+    :param file: File where the marker are stored.
+    :return: dict containing the dataset
+    """
+    if not isinstance(file,str):
+        raise AttributeError("Parameter file is not a string! It is type {0}".format(type(file)))
+
+    if not os.path.exists(file):
+        raise FileNotFoundError("File {0} was not found!".format(file))
+
+    marker = OrderedDict()
+    with open(file,'r') as f:
+        for line in f:
+            try:
+                name, value = str(line).split("\t")
+            except ValueError:
+                raise IOError("File {0} has not two ""columns! Needs to have only two. Has {1} "
+                              "column".format(file,str(line).split("\t")))
+            marker[name] = float(value)
+
+    return marker
+    pass
 
 @timeit
 def readData(file: str) -> np.ndarray:

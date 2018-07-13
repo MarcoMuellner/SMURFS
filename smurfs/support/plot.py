@@ -27,12 +27,42 @@ def plotCustom(title, data, **kwargs):
     return p
 
 
-def plotMesh(f,t,i):
-    pl.pcolormesh(f, t, i,cmap="inferno")
-    pl.xlabel(r"Frequency")
-    pl.ylabel(r"Time")
-    pl.colorbar()
+def plotMesh(f,t,i,frequencyList:dict):
+    fig = pl.figure()
+    ax1 = fig.add_subplot(111)
+    ax1.pcolormesh(f, t, i,cmap="gnuplot")
+    ax1.set_xlabel(r"Frequency")
+    ax1.set_ylabel(r"Time")
+
+    if frequencyList is not None:
+        ax2 = ax1.twiny()
+        ax3 = ax1.twiny()
+
+        fVal = list(frequencyList.values())
+        names = list(frequencyList.keys())
+        minX,maxX = min(fVal),max(fVal)
+
+        fVal2 = fVal[::2]
+        names2 = names[::2]
+
+        fVal = [x for x in fVal if x not in fVal2]
+        names = [x for x in names if x not in names2]
+
+        ax2.set_xticks(fVal)
+        ax2.set_xticklabels(names)
+        ax2.tick_params(labelrotation=90)
+
+        ax3.set_xticks(fVal2)
+        ax3.set_xticklabels(names2)
+        ax3.tick_params(pad=20,labelrotation=90)
+
+        ax1.set_xlim(minX*0.95,maxX*1.05)
+        ax2.set_xlim(minX* 0.95, maxX * 1.05)
+        ax3.set_xlim(minX * 0.95, maxX * 1.05)
+
+
+    #ax1.colorbar(ax1)
     np.savetxt("frequency.txt",f)
     np.savetxt("time.txt", t)
     np.savetxt("intensity.txt", i)
-    pl.savefig("results/dynamic_fourier.png")
+    fig.savefig("results/dynamic_fourier.png")

@@ -78,7 +78,7 @@ def testSNR(value):
     amp = calculateAmplitudeSpectrum(data)
     _ , _ = findAndRemoveMaxFrequency(data,amp)
     snr = computeSignalToNoise(amp,2)
-    assert abs(checklist - snr) < 10**-6
+    assert abs(checklist - snr) < 10**-1
 
 @pytest.mark.parametrize("value",testCasesCutoffCriterion)
 def testCutoffCriterion(value):

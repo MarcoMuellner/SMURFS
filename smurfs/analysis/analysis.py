@@ -4,7 +4,7 @@ from smurfs.support import *
 import matplotlib.pyplot as pl
 
 @timeit
-def run(file: str, snrCriterion: float, windowSize: float, **kwargs: dict):
+def run(file: str, snrCriterion: float, windowSize: float, **kwargs):
     """
     This function perfomrs a full analysis of a given star. Initially it will split up the dataset according to
     the parameters and than run the recursiveFrequencyFinder, which will return the frequencylist for the given split
@@ -31,10 +31,22 @@ def run(file: str, snrCriterion: float, windowSize: float, **kwargs: dict):
         chunks will than represent the dataset from 0->50,48->98,96->146, ...
         - frequencyRange: The frequencyRange parameter defines the frequency range where the dataset is constrained to.
         This will vastly improve speed, but could cut off significant frequencies
+        - frequencyMarker: Adds frequency marker to the dynamic fourier plot. If None, no are added.
     """
     data = readData(file)
     data = normalizeData(data)
     splitLists = getSplits(data,kwargs['timeRange'],kwargs['overlap'])
+    try:
+        frequencyMarker = readFrequencyMarker(kwargs['frequencyMarker'])
+    except FileNotFoundError:
+        if not kwargs['frequencyMarker'] == "":
+            print(term.format("File {0} was not found. No marker will be added to "
+                              "dynamic fourier plot!".format(kwargs['frequencyMarker']),term.Color.RED))
+        frequencyMarker = None
+    except ValueError as e:
+        print(term.format("Error in frequency Marker file. Error: {0}".format(e),term.Color.RED))
+        frequencyMarker = None
+
     result = {}
     createPath("results/")
     fList = []
@@ -58,8 +70,7 @@ def run(file: str, snrCriterion: float, windowSize: float, **kwargs: dict):
                 break
 
     f,t,i = combineDatasets(fList,tList,iList)
-
-    plotMesh(f,t,i)
+    plotMesh(f,t,i,frequencyMarker)
 
 
     waitForProcessesFinished()
