@@ -31,7 +31,7 @@ def plotCustom(title, data, **kwargs):
 def plotMesh(f,t,i,frequencyList:dict):
     fig = pl.figure()
     ax1 = fig.add_subplot(111)
-    ax1.pcolormesh(f, t, i,cmap="gnuplot")
+    ax1.pcolormesh(f, t, i,cmap="gnuplot",vmin=np.amax(i)/10,vmax=np.amax(i))
     ax1.set_xlabel(r"Frequency")
     ax1.set_ylabel(r"Time")
 

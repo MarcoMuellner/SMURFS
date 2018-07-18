@@ -272,8 +272,6 @@ def combineDatasets(fList: List[np.ndarray], tList: List[np.ndarray], iList: Lis
     if fList == [] or tList == [] or iList == []:
         raise ValueError(term.format("Size of all result lists must be equal!",term.Color.RED))
 
-    f = fList[0]
-
     for i in tList:
         try:
             t = np.hstack((t,i))
@@ -282,8 +280,13 @@ def combineDatasets(fList: List[np.ndarray], tList: List[np.ndarray], iList: Lis
 
     for j in iList:
         try:
-            intensity = np.row_stack((intensity,j))
+            intensity = np.row_stack((intensity,j[:,::]))
         except UnboundLocalError:
-            intensity = j
+            intensity = j[:,::]
+
+    for k in fList:
+        if len(k[::]) == intensity.shape[1]:
+            f = k[::]
+            break
 
     return f,t,intensity
