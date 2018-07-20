@@ -68,7 +68,7 @@ python -m smurfs -h
 The following are the current possibilities, including 
 small examples.
 
-###Mandatory parameters
+### Mandatory parameters
 * **fileName**: First parameter, containing the relative
 path to the file containing the data.
 * **snr**: Signal to noise ratio, used as a cutoff criterion. Will
@@ -84,7 +84,7 @@ Example:
 python -m smurfs tests/testFile.dat 4 2
 ``` 
 
-###Optional parameters
+### Optional parameters
 * **_-fr_ or _--frequencyRange_**: Defines the frequency range
 where the algorithm will perform the analysis. By default it 
 will calculate all frequencies from 0 to the nyquist frequency.
