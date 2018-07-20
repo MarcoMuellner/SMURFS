@@ -28,19 +28,23 @@ def plotCustom(title, data, **kwargs):
     return p
 
 
-def plotMesh(f,t,i,frequencyList:dict):
+def plotMesh(f,t,i,**kwargs):
     fig = pl.figure()
     ax1 = fig.add_subplot(111)
-    ax1.pcolormesh(f, t, i,cmap="gnuplot",vmin=np.amax(i)/10,vmax=np.amax(i))
+    if "minimumIntensity" in kwargs.keys():
+        mappable = ax1.pcolormesh(f, t, i,cmap="gnuplot"
+                                  ,vmin=np.log10(kwargs["minimumIntensity"]),vmax=np.amax(i))
+    else:
+        mappable = ax1.pcolormesh(f, t, i, cmap="gnuplot")
     ax1.set_xlabel(r"Frequency")
     ax1.set_ylabel(r"Time")
 
-    if frequencyList is not None:
+    if "frequencyList" in kwargs.keys():
         ax2 = ax1.twiny()
         ax3 = ax1.twiny()
 
-        fVal = list(frequencyList.values())
-        names = list(frequencyList.keys())
+        fVal = list(kwargs["frequencyList"].values())
+        names = list(kwargs["frequencyList"].keys())
         minX,maxX = min(fVal),max(fVal)
 
         fVal2 = fVal[::2]
@@ -61,8 +65,8 @@ def plotMesh(f,t,i,frequencyList:dict):
         ax2.set_xlim(minX* 0.95, maxX * 1.05)
         ax3.set_xlim(minX * 0.95, maxX * 1.05)
 
-
-    #ax1.colorbar(ax1)
+    fig.savefig("results/dynamic_fourier_without_colorbar.png")
+    fig.colorbar(mappable)
     np.savetxt("frequency.txt",f)
     np.savetxt("time.txt", t)
     np.savetxt("intensity.txt", i)

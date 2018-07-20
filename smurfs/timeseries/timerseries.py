@@ -2,6 +2,7 @@ import numpy as np
 from astropy.stats import LombScargle
 from scipy.optimize import curve_fit
 from typing import Tuple, List
+import warnings
 
 from smurfs.files import saveAmpSpectrumAndImage
 from smurfs.support import *
@@ -25,11 +26,11 @@ def calculateAmplitudeSpectrum(data: np.ndarray, frequencyBoundary: Tuple[float,
     # if defined max frequency is bigger than the nyquist frequency, cutoff at nyquist
     nFrequency = nyquistFrequency(data)
     if frequencyBoundary[1] > nFrequency:
-        print(term.format("Upper windowsize of {0} is higher than Nyquist frequency, using Nyquist at {1}"
-                          .format(frequencyBoundary[1], nyquistFrequency),term.Color.RED))
-        max_frequency = nFrequency
-    else:
-        max_frequency = frequencyBoundary[1]
+        print(term.format("Upper Frequencyrange of {0} is higher than Nyquist frequency. Please be aware that "
+                          "this can lead to problems with the results!"
+                          .format(frequencyBoundary[1], nyquistFrequency),term.Color.YELLOW))
+
+    max_frequency = frequencyBoundary[1]
 
     # compute Spectrum
     f, p = ls.autopower(minimum_frequency=frequencyBoundary[0], maximum_frequency=max_frequency, samples_per_peak=100)
@@ -107,6 +108,9 @@ def findAndRemoveMaxFrequency(lightCurve: np.ndarray, ampSpectrum: np.ndarray) -
         arr = popt
 
         retLightCurve = np.array((lightCurve[0], lightCurve[1] - sin(lightCurve[0], *popt)))
+
+    if defines.minimumIntensity is None or defines.minimumIntensity > popt[0]:
+        defines.minimumIntensity = popt[0]
 
     return popt, retLightCurve
 
@@ -288,5 +292,13 @@ def combineDatasets(fList: List[np.ndarray], tList: List[np.ndarray], iList: Lis
         if len(k[::]) == intensity.shape[1]:
             f = k[::]
             break
+
+    with warnings.catch_warnings():
+        warnings.filterwarnings("error")
+
+        try:
+            intensity = np.log10(intensity)
+        except RuntimeWarning:
+            pass
 
     return f,t,intensity

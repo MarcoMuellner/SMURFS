@@ -102,5 +102,7 @@ def testSpectrogramCreation():
     print("Start plotting")
 
     f,t,i = combineDatasets(fList,tList,iList)
-    plotMesh(f,t,i,None)
+    plotMesh(f,t,i)
+    plotMesh(f,t,i,minimumIntensity=0.2)
+    plotMesh(f, t, i, minimumIntensity=0.2,frequencyList={"f1":0.1,"f2":1.2})
 

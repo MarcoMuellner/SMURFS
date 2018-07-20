@@ -7,3 +7,4 @@ similarityStdDev = 0.05
 dieGracefully = False
 
 maxiLength = None
+minimumIntensity = None
