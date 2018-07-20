@@ -65,7 +65,6 @@ def plotMesh(f,t,i,**kwargs):
         ax2.set_xlim(minX* 0.95, maxX * 1.05)
         ax3.set_xlim(minX * 0.95, maxX * 1.05)
 
-    fig.savefig("results/dynamic_fourier_without_colorbar.png")
     fig.colorbar(mappable)
     np.savetxt("frequency.txt",f)
     np.savetxt("time.txt", t)
