@@ -1,8 +1,9 @@
 import pip
-ver = pip.__version__.split(".")
+from smurfs._version import __version__
+pipVer = pip.__version__.split(".")
 
 #main is not directly accessible anymore on pip > 10
-if int(ver[0]) < 10:
+if int(pipVer[0]) < 10:
     from pip import main
 else:
     from pip._internal import main
@@ -25,7 +26,7 @@ for req in reqs:
 
 setup(
     name='smurfs',
-    version='0.3.2',
+    version=__version__,
     packages=find_packages(exclude=["*test","dist","build","venv"]),
     url='https://github.com/muma7490/SMURFS',
     license='MIT',

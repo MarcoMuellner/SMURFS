@@ -124,6 +124,7 @@ the according values. Be aware, that if you set the _-fr_ option, the spectrogra
 necessarily contain all lines. For example, if your lowest marker is at 40 c/d, and you have
 set _-fr=45,70_, the range between 40 and 45 will not be plotted, but will be visible as an
 empty area.
+* **_--version_**: Shows the current version of SMURFS
 ```
 python -m smurfs tests/testFile.data 4 2 -fm=tests/test_frequencyMarker.txt
 ```
