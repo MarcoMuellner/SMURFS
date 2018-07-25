@@ -39,7 +39,7 @@ def plotMesh(f,t,i,**kwargs):
     ax1.set_xlabel(r"Frequency")
     ax1.set_ylabel(r"Time")
 
-    if "frequencyList" in kwargs.keys():
+    if "frequencyList" in kwargs.keys() and kwargs["frequencyList"] is not None:
         ax2 = ax1.twiny()
         ax3 = ax1.twiny()
 

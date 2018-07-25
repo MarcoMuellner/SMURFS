@@ -1,5 +1,6 @@
 import argparse
 from smurfs.analysis import *
+from smurfs._version import __version__
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -36,6 +37,8 @@ if __name__ == '__main__':
                                                        "on top of the plot. Please use a relative path to the call path "
                                                        "you are currently in",
                         type=str,default="")
+    parser.add_argument("--version",help="Shows version of SMURFS",action='version',
+                        version='SMURFS {version}'.format(version=__version__))
 
 
     args = parser.parse_args()
