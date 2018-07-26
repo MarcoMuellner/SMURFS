@@ -33,7 +33,7 @@ def plotMesh(f,t,i,**kwargs):
     ax1 = fig.add_subplot(111)
     if "minimumIntensity" in kwargs.keys():
         mappable = ax1.pcolormesh(f, t, i,cmap="gnuplot"
-                                  ,vmin=np.log10(kwargs["minimumIntensity"]),vmax=np.amax(i))
+                                  ,vmin=kwargs["minimumIntensity"],vmax=np.amax(i))
     else:
         mappable = ax1.pcolormesh(f, t, i, cmap="gnuplot")
     ax1.set_xlabel(r"Frequency")
@@ -65,7 +65,6 @@ def plotMesh(f,t,i,**kwargs):
         ax2.set_xlim(minX* 0.95, maxX * 1.05)
         ax3.set_xlim(minX * 0.95, maxX * 1.05)
 
-    fig.colorbar(mappable)
     np.savetxt("frequency.txt",f)
     np.savetxt("time.txt", t)
     np.savetxt("intensity.txt", i)
