@@ -70,7 +70,11 @@ def run(file: str, snrCriterion: float, windowSize: float, **kwargs):
                 break
 
     f,t,i = combineDatasets(fList,tList,iList)
-    plotMesh(f,t,i,frequencyList = frequencyMarker,minimumIntensity = defines.minimumIntensity)
+    if kwargs['timeRange'] == -1:
+        tMax = max(t)
+    else:
+        tMax = max(t) - kwargs['timeRange'] + kwargs['overlap']
+    plotMesh(f,t,i,frequencyList = frequencyMarker,minimumIntensity = defines.minimumIntensity,tMax = tMax)
 
 
     waitForProcessesFinished()

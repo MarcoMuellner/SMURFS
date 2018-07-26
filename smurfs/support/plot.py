@@ -36,6 +36,9 @@ def plotMesh(f,t,i,**kwargs):
                                   ,vmin=kwargs["minimumIntensity"],vmax=np.amax(i))
     else:
         mappable = ax1.pcolormesh(f, t, i, cmap="gnuplot")
+
+    if "tMax" in kwargs.keys():
+        ax1.set_ylim(0,kwargs["tMax"])
     ax1.set_xlabel(r"Frequency")
     ax1.set_ylabel(r"Time")
 
