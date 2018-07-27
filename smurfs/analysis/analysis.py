@@ -73,7 +73,7 @@ def run(file: str, snrCriterion: float, windowSize: float, **kwargs):
     if kwargs['timeRange'] == -1:
         tMax = max(t)
     else:
-        tMax = max(t) - kwargs['timeRange'] + kwargs['overlap']
+        tMax = max(t) - kwargs['overlap']
     plotMesh(f,t,i,frequencyList = frequencyMarker,minimumIntensity = defines.minimumIntensity,tMax = tMax)
 
 
