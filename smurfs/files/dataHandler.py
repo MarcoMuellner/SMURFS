@@ -59,7 +59,7 @@ def readData(file: str) -> np.ndarray:
     return np.loadtxt(file).T
 
 @timeit
-def getSplits(data: np.ndarray, timeRange: float = -1, overlap: float = 0) -> List[np.ndarray]:
+def getSplits(data: np.ndarray, timeRange: float = -1, overlap: float = 0,ignoreCutoffRatio : bool = False) -> List[np.ndarray]:
     """
     The getSplits function creates equally sized chunks of the original dataset with an optional overlap between two
     chunks and returns a list of these arrays. To do this, it finds the nearest index to a datapoint which responds to
@@ -90,10 +90,14 @@ def getSplits(data: np.ndarray, timeRange: float = -1, overlap: float = 0) -> Li
         if timeRange != max(data[0]):
             gapRatio= getGapRatio(data,lowerIndex,upperIndex)
             if gapRatio > cutoffRatio:
-                print(term.format("Ignoring time base from "+str(int(data[0][lowerIndex]))+" to "+str(int(data[0][upperIndex]))+
-                                  " because the gap Ratio is greater 0.5. Gap Ratio is "+str(gapRatio),term.Color.RED))
-
-                continue
+                if not ignoreCutoffRatio:
+                    print(term.format("Ignoring time base from "+str(int(data[0][lowerIndex]))+" to "+str(int(data[0][upperIndex]))+
+                                      " because the gap Ratio is greater 0.5. Gap Ratio is "+str(gapRatio),term.Color.RED))
+                    continue
+                else:
+                    print(term.format("Time base from  " + str(int(data[0][lowerIndex])) + " to " + str(
+                        int(data[0][upperIndex])) +" has a gap ratio of  " + str(gapRatio) +
+                          ", but will be taken eitherway because of ignoreCutoffRatio=True",term.Color.YELLOW))
         else:
             print(term.format("Ommited gap ratio. Time Range is "+str(timeRange)+",max data "+str(max(data[0])),term.Color.CYAN))
         array = np.array((data[0][lowerIndex:upperIndex],data[1][lowerIndex:upperIndex]))

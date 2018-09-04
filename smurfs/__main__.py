@@ -40,6 +40,9 @@ if __name__ == '__main__':
     parser.add_argument("--version",help="Shows version of SMURFS",action='version',
                         version='SMURFS {version}'.format(version=__version__))
 
+    parser.add_argument("-igr","--ignoreCutoffRatio",help="Optional parameter. If this is set to True, it will ignore"
+                                                          "the gap ratio cutoff criterion",type=bool,default=False)
+
 
     args = parser.parse_args()
 
@@ -51,7 +54,8 @@ if __name__ == '__main__':
                                 ,timeRange=args.timeBaseSplit
                                 ,overlap=args.overlap
                                 ,outputMode=args.outputMode
-                                ,frequencyMarker=args.frequencyMarker)
+                                ,frequencyMarker=args.frequencyMarker
+                                ,ignoreCutoffRatio=args.ignoreCutoffRatio)
 
 
 

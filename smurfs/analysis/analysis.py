@@ -35,7 +35,7 @@ def run(file: str, snrCriterion: float, windowSize: float, **kwargs):
     """
     data = readData(file)
     data = normalizeData(data)
-    splitLists = getSplits(data,kwargs['timeRange'],kwargs['overlap'])
+    splitLists = getSplits(data,kwargs['timeRange'],kwargs['overlap'],kwargs['ignoreCutoffRatio'])
     try:
         frequencyMarker = readFrequencyMarker(kwargs['frequencyMarker'])
     except FileNotFoundError:
@@ -58,8 +58,13 @@ def run(file: str, snrCriterion: float, windowSize: float, **kwargs):
 
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            frequencyList,f,t,i = recursiveFrequencyFinder(data,snrCriterion,windowSize
+            try:
+                frequencyList,f,t,i = recursiveFrequencyFinder(data,snrCriterion,windowSize
                                                      ,frequencyRange=kwargs['frequencyRange'],mode=kwargs['outputMode'])
+            except (ValueError,IndexError):
+                print(term.format("Time base from "+ str(int(data[0][0])) + " to " + str(int(max(data[0])))+ "failed "
+                         "to perform Lomb-Scargle. Cannot determine Spectrum. Skipping this sector",term.Color.RED))
+                continue
 
             fList.append(f)
             tList.append(t)
