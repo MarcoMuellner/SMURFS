@@ -127,6 +127,13 @@ empty area.
 ```
 python -m smurfs tests/testFile.data 4 2 -fm=tests/test_frequencyMarker.txt
 ```
+* **_-igr_ or _--ignoreCutoffRatio_**: Ignores the skipping of areas where the gap ratio
+would be too small according to smurfs. This means you can also run areas that have a
+lower gap ratio.
+
+```
+python -m smurfs tests/testFile.data 4 2 -fm=tests/test_frequencyMarker.txt --igr
+```
 * **_--version_**: Shows the current version of SMURFS
 
 
