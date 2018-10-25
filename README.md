@@ -44,7 +44,7 @@ All possible commandline parameters can be accessed using the help flag
 ```
 python -m smurfs -h
 ```
-At least you need to provide the fileName, signal to noise ration and windowsize. For example
+At least you need to provide the fileName, signal to noise ratio and windowsize. For example
 ```
 python -m smurfs tests/testFile.dat 4 2
 ```
