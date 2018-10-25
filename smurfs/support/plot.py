@@ -74,5 +74,8 @@ def plotMesh(f,t,i,**kwargs):
 
     if not os.path.exists("results"):
         os.mkdir("results")
-
-    fig.savefig("results/dynamic_fourier.png")
+    try:
+        fig.savefig("results/dynamic_fourier.png")
+    except:
+        print(term.format("Failed to plot dynamic fourier plot! Maybe only one timerange?",
+                          term.Color.YELLOW))

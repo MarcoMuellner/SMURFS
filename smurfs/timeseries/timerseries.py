@@ -107,6 +107,11 @@ def findAndRemoveMaxFrequency(lightCurve: np.ndarray, ampSpectrum: np.ndarray) -
             popt[2] += -np.pi if popt[2] > np.pi else np.pi
         arr = popt
 
+        if popt[2] < 0:
+            popt[2] += 2*np.pi
+        elif popt[2] > 2*np.pi:
+            popt[2] -= 2*np.pi
+
         retLightCurve = np.array((lightCurve[0], lightCurve[1] - sin(lightCurve[0], *popt)))
 
     if defines.minimumIntensity is None or defines.minimumIntensity > popt[0]:
