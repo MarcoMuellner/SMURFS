@@ -191,7 +191,13 @@ def cutoffCriterion(frequencyList: List):
     fList = []
 
     for i in frequencyList:
-        fList.append(i[0].nominal_value)
+        try:
+            fList.append(i[0].nominal_value)
+        except IndexError:
+            try:
+                fList.append(i.nominal_value)
+            except AttributeError:
+                fList.append(i)
 
 
     lastFrequencies = np.array(fList[-similarFrequenciesCount:])
