@@ -68,10 +68,6 @@ def plotMesh(f,t,i,**kwargs):
         ax2.set_xlim(minX* 0.95, maxX * 1.05)
         ax3.set_xlim(minX * 0.95, maxX * 1.05)
 
-    np.savetxt("frequency.txt",f)
-    np.savetxt("time.txt", t)
-    np.savetxt("intensity.txt", i)
-
     if not os.path.exists("results"):
         os.mkdir("results")
     try:

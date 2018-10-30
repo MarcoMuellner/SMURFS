@@ -143,7 +143,7 @@ def find_nearest(array: np.ndarray, value: float) -> int:
     return int(idx)
 
 @timeit
-def writeResults(file: str, data: Dict[Tuple[float,float],List[Tuple[float,float]]], mode: str = 'w'):
+def writeResults(file: str, data: Dict[Tuple[float,float],List[Tuple[float,float]]],nyquistFrequency : float, mode: str = 'w'):
     """
     This function writes the results of the analysis. The file will have a structure like this:
     Lowerrange Upperrange
@@ -156,15 +156,18 @@ def writeResults(file: str, data: Dict[Tuple[float,float],List[Tuple[float,float
     :param mode write mode. Default is 'w':
     """
     with open(file,mode) as f:
-        f.write("Lowerrange Upperrange\n")
+        f.write(f"Nyquist frequency, whole dataset (c/d);{nyquistFrequency}\n")
+        f.write("Lowerrange;Upperrange;f(c/d);f_err(c/d);snr;amp;amp_err;phase;phase_err\n")
         for key,value in data.items():
-            f.write(str(key[0]) + " " + str(key[1])+"\n")
-            f.write("   frequency snr amp phase"+"\n")
+            f.write(f"{key[0]};{key[1]};;;;;;;\n")
 
             for i in value:
-                text = "    "
+                text = ";"
                 for j in i:
-                    text +=str(j)+" "
+                    try:
+                        text+=f";{j.nominal_value};{j.std_dev}"
+                    except AttributeError:
+                        text += f";{j}"
                 text +="\n"
                 f.write(text)
 

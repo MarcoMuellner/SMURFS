@@ -33,9 +33,9 @@ def run(file: str, snrCriterion: float, windowSize: float, **kwargs):
         This will vastly improve speed, but could cut off significant frequencies
         - frequencyMarker: Adds frequency marker to the dynamic fourier plot. If None, no are added.
     """
-    data = readData(file)
-    data = normalizeData(data)
-    splitLists = getSplits(data,kwargs['timeRange'],kwargs['overlap'],kwargs['ignoreCutoffRatio'])
+    fileData = readData(file)
+    fileData = normalizeData(fileData)
+    splitLists = getSplits(fileData,kwargs['timeRange'],kwargs['overlap'],kwargs['ignoreCutoffRatio'])
     try:
         frequencyMarker = readFrequencyMarker(kwargs['frequencyMarker'])
     except FileNotFoundError:
@@ -83,5 +83,5 @@ def run(file: str, snrCriterion: float, windowSize: float, **kwargs):
 
 
     waitForProcessesFinished()
-    writeResults("results/results.txt",result)
+    writeResults("results/results.txt",result,nyquistFrequency(fileData))
 

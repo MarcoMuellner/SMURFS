@@ -6,6 +6,7 @@ import warnings
 
 from smurfs.files import saveAmpSpectrumAndImage
 from smurfs.support import *
+from uncertainties import ufloat
 
 
 @timeit
@@ -107,9 +108,10 @@ def findAndRemoveMaxFrequency(lightCurve: np.ndarray, ampSpectrum: np.ndarray) -
             popt[2] += -np.pi if popt[2] > np.pi else np.pi
         arr = popt
 
-        if popt[2] < 0:
+        while popt[2] < 0:
             popt[2] += 2*np.pi
-        elif popt[2] > 2*np.pi:
+
+        while popt[2] > 2*np.pi:
             popt[2] -= 2*np.pi
 
         retLightCurve = np.array((lightCurve[0], lightCurve[1] - sin(lightCurve[0], *popt)))
@@ -117,7 +119,12 @@ def findAndRemoveMaxFrequency(lightCurve: np.ndarray, ampSpectrum: np.ndarray) -
     if defines.minimumIntensity is None or defines.minimumIntensity > popt[0]:
         defines.minimumIntensity = popt[0]
 
-    return popt, retLightCurve
+    perr = np.sqrt(np.diag(pcov))
+    ret = []
+    for i in range(0,len(popt)):
+        ret.append(ufloat(popt[i],perr[i]))
+
+    return ret, retLightCurve
 
 
 @timeit
@@ -181,8 +188,13 @@ def sin(x: np.ndarray, amp: float, f: float, phase: float) -> np.ndarray:
 def cutoffCriterion(frequencyList: List):
     if len(frequencyList) < similarFrequenciesCount:
         return True
+    fList = []
 
-    lastFrequencies = np.array(frequencyList[-similarFrequenciesCount:])
+    for i in frequencyList:
+        fList.append(i[0].nominal_value)
+
+
+    lastFrequencies = np.array(fList[-similarFrequenciesCount:])
     stdDev = lastFrequencies.std()
     if stdDev < similarityStdDev:
         print(
@@ -233,6 +245,7 @@ def recursiveFrequencyFinder(data: np.ndarray, snrCriterion: float, windowSize: 
     """
     frequencyList = None
     f, t, i = None, None, None
+    print(term.format(f"Nyquist frequency: {nyquistFrequency(data)} c/d", term.Color.CYAN))
     try:
         snr = 100
         frequencyList = []
