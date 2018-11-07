@@ -190,6 +190,6 @@ def saveAmpSpectrumAndImage(ampSpectrum: np.ndarray, path: str, name: str):
 
     with cd(path):
         np.savetxt(name+".txt",ampSpectrum.T)
-        plotData = {"Amplitude Spectrum":(ampSpectrum, geom_line, 'solid')}
+        plotData = {name:(ampSpectrum, geom_line, 'solid')}
         p = plotCustom(name,plotData,xLabel="Frequency(c/d)",yLabel="Amplitude")
         p.save(name+".pdf")

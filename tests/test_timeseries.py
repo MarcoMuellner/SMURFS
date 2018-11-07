@@ -107,3 +107,11 @@ def testSpectrogramCreation():
     #plotMesh(f, t, i, minimumIntensity=0.2,frequencyList=None)
     #plotMesh(f, t, i, minimumIntensity=0.2,frequencyList={"f1":0.1,"f2":1.2})
 
+def testSpectralWindow():
+    data = np.loadtxt("tests/period04.dat")
+    ls = calculateAmplitudeSpectrum(data)
+    window,spectral_window = applyWindow(data)
+
+
+
+

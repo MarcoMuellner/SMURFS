@@ -9,6 +9,33 @@ from smurfs.support import *
 from uncertainties import ufloat
 
 
+def applyWindow(data:np.ndarray,frequencyBoundary: Tuple[float, float] = (0, 50)) -> Tuple[np.ndarray,np.ndarray]:
+    """
+    Apply Window extracts the spectral window from a given dataset, using the hamming algorithm.
+    :param data: Timeseries data
+    :param frequencyBoundary: Boundaries for the spectral window
+    :return: Windowfunction applied to the data as well as the spectral window
+    """
+    if len(data) != 2:
+        raise ValueError("Please move the whole dataset through!")
+
+    width = len(data[0])
+    window = np.hamming(width)
+
+    appliedWindow = np.array((data[0],window*data[1]))
+    ls = LombScargle(appliedWindow[0],appliedWindow[1],normalization='psd')
+    f, p = ls.autopower(minimum_frequency=frequencyBoundary[0],
+                        maximum_frequency=frequencyBoundary[1], samples_per_peak=100)
+    p = np.sqrt(4 / len(data[0])) * np.sqrt(p)
+
+    p = p[1:]
+    f = f[1:]
+
+    return appliedWindow,np.array((f,p))
+
+
+
+
 @timeit
 def calculateAmplitudeSpectrum(data: np.ndarray, frequencyBoundary: Tuple[float, float] = (0, 50)) -> np.ndarray:
     """
@@ -266,16 +293,20 @@ def recursiveFrequencyFinder(data: np.ndarray, snrCriterion: float, windowSize: 
             except:
                 saveStuff = True
             amp = calculateAmplitudeSpectrum(data, kwargs['frequencyRange'])
+            _,specWindow = applyWindow(data,kwargs['frequencyRange'])
             snr = computeSignalToNoise(amp, windowSize)
             fit, data = findAndRemoveMaxFrequency(data, amp)
 
             print(term.format(str(fit[1]) + "c/d     " + str(fit[0]) + "     " + str(fit[2]) + "    " + str(snr),
                               term.Color.CYAN))
 
-            fileNames = "amplitude_spectrum_f_" + str(len(frequencyList))
+            amp_spectrum_filename = "amplitude_spectrum_f_" + str(len(frequencyList))
+            spec_window_filename = "spectral_window_f_"+str(len(frequencyList))
+
 
             if saveStuff:
-                saveAmpSpectrumAndImage(amp, savePath, fileNames)
+                saveAmpSpectrumAndImage(amp, savePath, amp_spectrum_filename)
+                saveAmpSpectrumAndImage(specWindow, savePath, spec_window_filename)
                 f, t, i = prepareSpectrogram(amp, (int(data[0][0]), int(np.max(data[0]))))
 
             if not cutoffCriterion(frequencyList):
@@ -284,7 +315,7 @@ def recursiveFrequencyFinder(data: np.ndarray, snrCriterion: float, windowSize: 
         try:
             if kwargs['mode'] == 'Normal':
                 pass
-                saveAmpSpectrumAndImage(amp, savePath, fileNames)
+                saveAmpSpectrumAndImage(amp, savePath, amp_spectrum_filename)
         except KeyError:
             pass
     except KeyboardInterrupt:
