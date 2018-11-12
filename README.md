@@ -37,7 +37,7 @@ python -m smurfs
 
 You can also use it via main.py
 ```
-python __main.py__
+python __main__.py
 ```
 
 All possible commandline parameters can be accessed using the help flag
