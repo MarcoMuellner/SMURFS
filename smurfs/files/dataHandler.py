@@ -15,8 +15,20 @@ def normalizeData(data: np.ndarray) -> np.ndarray:
     :return: A normalized dataset
     """
     data[0] -= data[0][0]
-    data[1] -= np.mean(data[1])
-    return data
+
+    x = data[0]
+    y = data[1]
+
+    for i in [np.inf,-np.inf,np.nan]:
+        if i in y:
+            n = len(y[y==i])
+            print(term.format(f"You have {n} {i} in your data. These points will be removed.",term.Color.YELLOW))
+
+        x = x[y != i]
+        y = y[y != i]
+
+    y -= np.mean(y)
+    return np.array((x,y))
 
 @timeit
 def readFrequencyMarker(file: str) -> Dict[str,float]:
@@ -78,6 +90,10 @@ def getSplits(data: np.ndarray, timeRange: float = -1, overlap: float = 0,ignore
         timeRange = max(data[0])
     dataPoints = []
     i = 0
+
+    if not i*(timeRange-overlap)+timeRange <= max(data[0]):
+        timeRange = max(data[0])
+
     while(i*(timeRange-overlap)+timeRange <= max(data[0])):
         lowerIndex = find_nearest(data[0],i*(timeRange-overlap))
         upperIndex = find_nearest(data[0],i*(timeRange-overlap)+timeRange)+1

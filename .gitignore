@@ -108,3 +108,5 @@ results\.txt
 results/
 
 \.DS_Store
+
+*.png
