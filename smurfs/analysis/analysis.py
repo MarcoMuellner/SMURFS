@@ -70,7 +70,9 @@ def run(file: str, snrCriterion: float, windowSize: float, **kwargs):
             tList.append(t)
             iList.append(i)
 
-            result[(data[0][0], max(data[0]))] = frequencyList
+            print(term.format(f"Residual noise {frequencyList[-1][4]}", term.Color.GREEN))
+
+            result[(data[0][0], max(data[0]),frequencyList[-1][4])] = frequencyList
             if defines.dieGracefully:
                 break
 
@@ -83,5 +85,5 @@ def run(file: str, snrCriterion: float, windowSize: float, **kwargs):
 
 
     waitForProcessesFinished()
-    writeResults("results/results.txt",result,nyquistFrequency(fileData))
+    writeResults("results/results.csv",result,nyquistFrequency(fileData))
 

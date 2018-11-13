@@ -173,6 +173,7 @@ def writeResults(file: str, data: Dict[Tuple[float,float],List[Tuple[float,float
         f.write("Lowerrange;Upperrange;f(c/d);f_err(c/d);snr;amp;amp_err;phase;phase_err\n")
         for key,value in data.items():
             f.write(f"{key[0]};{key[1]};;;;;;;\n")
+            f.write(f"Residuals to noise;{key[2]};;;;;;;\n")
 
             for i in value:
                 text = ";"
@@ -206,4 +207,4 @@ def saveAmpSpectrumAndImage(ampSpectrum: np.ndarray, path: str, name: str):
         plotData = {name:(ampSpectrum, '-')}
         p = plotCustom(name,plotData,xLabel="Frequency(c/d)",yLabel="Amplitude")
         p.savefig(name+".pdf")
-        pl.close(fig=p)
+        pl.close()

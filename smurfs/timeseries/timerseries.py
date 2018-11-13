@@ -88,6 +88,7 @@ def findMostCommonDiff(time: np.ndarray) -> float:
     :return:
     """
     realDiffX = time[1:len(time)] - time[0:len(time) - 1]
+    realDiffX = realDiffX[realDiffX!=0]
     (values, counts) = np.unique(realDiffX, return_counts=True)
     mostCommon = values[np.argmax(counts)]
     return mostCommon
@@ -300,7 +301,8 @@ def recursiveFrequencyFinder(data: np.ndarray, snrCriterion: float, windowSize: 
 
         while (snr > snrCriterion):
             try:
-                frequencyList.append((fit[1], snr, fit[0], fit[2],))
+                resNoise = np.mean(data[1])
+                frequencyList.append((fit[1], snr, fit[0], fit[2],resNoise))
                 saveStuff = True if kwargs['mode'] == 'Full' else False
             except:
                 saveStuff = True
@@ -323,7 +325,7 @@ def recursiveFrequencyFinder(data: np.ndarray, snrCriterion: float, windowSize: 
 
             if not cutoffCriterion(frequencyList):
                 break
-
+        resNoise = np.mean(amp)
         try:
             if kwargs['mode'] == 'Normal':
                 pass
@@ -333,10 +335,8 @@ def recursiveFrequencyFinder(data: np.ndarray, snrCriterion: float, windowSize: 
     except KeyboardInterrupt:
         print(term.format("Interrupted Run", term.Color.RED))
         defines.dieGracefully = True
+    finally:
         return frequencyList, f, t, i
-
-    return frequencyList, f, t, i
-
 
 def combineDatasets(fList: List[np.ndarray], tList: List[np.ndarray], iList: List[np.ndarray]) -> Tuple[
     np.ndarray, np.ndarray, np.ndarray]:
