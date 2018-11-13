@@ -102,15 +102,16 @@ def testSpectrogramCreation():
     print("Start plotting")
 
     f,t,i = combineDatasets(fList,tList,iList)
-    plotMesh(f,t,i)
-    #plotMesh(f,t,i,minimumIntensity=0)
-    #plotMesh(f, t, i, minimumIntensity=0.2,frequencyList=None)
-    #plotMesh(f, t, i, minimumIntensity=0.2,frequencyList={"f1":0.1,"f2":1.2})
 
 def testSpectralWindow():
-    data = np.loadtxt("tests/period04.dat")
+    data = np.loadtxt("tests/period04.dat").T
+    overlay = (data[0]-min(data[0]))<27
+    data = np.array((data[0][overlay],data[1][overlay]))
     ls = calculateAmplitudeSpectrum(data)
-    window,spectral_window = applyWindow(data)
+    spectral_window = calculateSpectralWindow(data)
+
+    ls[1] /= np.amax(ls[1])
+    spectral_window[1] /= np.amax(spectral_window[1])
 
 
 

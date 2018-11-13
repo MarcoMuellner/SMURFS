@@ -1,40 +1,34 @@
 import numpy as np
 from astropy.stats import LombScargle
 from scipy.optimize import curve_fit
+from scipy.signal.windows import get_window
 from typing import Tuple, List
 import warnings
 
 from smurfs.files import saveAmpSpectrumAndImage
 from smurfs.support import *
 from uncertainties import ufloat
+from smurfs.support.config import conf,UncertaintiesMode
 
-
-def applyWindow(data:np.ndarray,frequencyBoundary: Tuple[float, float] = (0, 50)) -> Tuple[np.ndarray,np.ndarray]:
+def calculateSpectralWindow(data:np.ndarray, frequencyBoundary: Tuple[float, float] = (0, 50)) -> np.ndarray:
     """
-    Apply Window extracts the spectral window from a given dataset, using the hamming algorithm.
-    :param data: Timeseries data
-    :param frequencyBoundary: Boundaries for the spectral window
-    :return: Windowfunction applied to the data as well as the spectral window
+    Computes the spectral window of a given dataset. Derivation of formula from Asteroseismology (2010)
+    :param data: time series dataset
+    :param frequencyBoundary: boundaries for spectral window
+    :return: FFT of window
     """
     if len(data) != 2:
         raise ValueError("Please move the whole dataset through!")
 
-    width = len(data[0])
-    window = np.hamming(width)
+    t = data[0]
+    W = []
+    f = np.linspace(frequencyBoundary[0],frequencyBoundary[1] , num=50*(frequencyBoundary[1]-frequencyBoundary[0]))
+    for i in f:
+        w = (1 / len(t)) * np.sum(np.exp(2 * np.pi * 1j * i * t))
+        W.append(w)
 
-    appliedWindow = np.array((data[0],window*data[1]))
-    ls = LombScargle(appliedWindow[0],appliedWindow[1],normalization='psd')
-    f, p = ls.autopower(minimum_frequency=frequencyBoundary[0],
-                        maximum_frequency=frequencyBoundary[1], samples_per_peak=100)
-    p = np.sqrt(4 / len(data[0])) * np.sqrt(p)
-
-    p = p[1:]
-    f = f[1:]
-
-    return appliedWindow,np.array((f,p))
-
-
-
+    p = np.abs(np.array(W))
+    return np.array((f,p))
 
 @timeit
 def calculateAmplitudeSpectrum(data: np.ndarray, frequencyBoundary: Tuple[float, float] = (0, 50)) -> np.ndarray:
@@ -148,8 +142,26 @@ def findAndRemoveMaxFrequency(lightCurve: np.ndarray, ampSpectrum: np.ndarray) -
 
     perr = np.sqrt(np.diag(pcov))
     ret = []
-    for i in range(0,len(popt)):
-        ret.append(ufloat(popt[i],perr[i]))
+    if conf().uncertaintiesMode == UncertaintiesMode.fit.value:
+        for i in range(0,len(popt)):
+            ret.append(ufloat(popt[i],perr[i]))
+    elif conf().uncertaintiesMode == UncertaintiesMode.montgomery.value:
+        #computation of uncertainties with Montgomery & O'Donoghue (1999)
+        sigma_m = np.std(lightCurve[1])
+        sigma_amp = np.sqrt(2/len(lightCurve[1])) * sigma_m
+        sigma_f = np.sqrt(6/len(lightCurve[1])) * (1/(np.pi*max(lightCurve[0])-min(lightCurve[0]))) * sigma_m/popt[0]
+        sigma_phi = np.sqrt(2/len(lightCurve[1])) * sigma_m/popt[0]
+        ret = [
+            ufloat(popt[0],sigma_amp),
+            ufloat(popt[1],sigma_f),
+            ufloat(popt[2],sigma_phi)
+        ]
+    elif conf().uncertaintiesMode == UncertaintiesMode.none.value:
+        for i in popt:
+            ret.append(ufloat(i,0))
+    else:
+        raise ValueError(f"Unknown error computation with {conf().uncertaintiesMode}")
+
 
     return ret, retLightCurve
 
@@ -293,7 +305,7 @@ def recursiveFrequencyFinder(data: np.ndarray, snrCriterion: float, windowSize: 
             except:
                 saveStuff = True
             amp = calculateAmplitudeSpectrum(data, kwargs['frequencyRange'])
-            _,specWindow = applyWindow(data,kwargs['frequencyRange'])
+            specWindow = calculateSpectralWindow(data, kwargs['frequencyRange'])
             snr = computeSignalToNoise(amp, windowSize)
             fit, data = findAndRemoveMaxFrequency(data, amp)
 
