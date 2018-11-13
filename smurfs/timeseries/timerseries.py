@@ -8,7 +8,7 @@ import warnings
 from smurfs.files import saveAmpSpectrumAndImage
 from smurfs.support import *
 from uncertainties import ufloat
-from smurfs.support.config import conf,UncertaintiesMode
+from smurfs.support.config import conf,UncertaintyMode
 
 def calculateSpectralWindow(data:np.ndarray, frequencyBoundary: Tuple[float, float] = (0, 50)) -> np.ndarray:
     """
@@ -142,10 +142,10 @@ def findAndRemoveMaxFrequency(lightCurve: np.ndarray, ampSpectrum: np.ndarray) -
 
     perr = np.sqrt(np.diag(pcov))
     ret = []
-    if conf().uncertaintiesMode == UncertaintiesMode.fit.value:
+    if conf().uncertaintiesMode == UncertaintyMode.fit.value:
         for i in range(0,len(popt)):
             ret.append(ufloat(popt[i],perr[i]))
-    elif conf().uncertaintiesMode == UncertaintiesMode.montgomery.value:
+    elif conf().uncertaintiesMode == UncertaintyMode.montgomery.value:
         #computation of uncertainties with Montgomery & O'Donoghue (1999)
         sigma_m = np.std(lightCurve[1])
         sigma_amp = np.sqrt(2/len(lightCurve[1])) * sigma_m
@@ -156,7 +156,7 @@ def findAndRemoveMaxFrequency(lightCurve: np.ndarray, ampSpectrum: np.ndarray) -
             ufloat(popt[1],sigma_f),
             ufloat(popt[2],sigma_phi)
         ]
-    elif conf().uncertaintiesMode == UncertaintiesMode.none.value:
+    elif conf().uncertaintiesMode == UncertaintyMode.none.value:
         for i in popt:
             ret.append(ufloat(i,0))
     else:

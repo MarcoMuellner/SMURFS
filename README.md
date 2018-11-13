@@ -54,9 +54,11 @@ All results will be written to the _results/_ path relative to the
 path where you have called SMURFS.The analysis will generate 3 
 different outputs for each run:
 * A folder, named after the timerange chosen, containing plots of the 
-spectra and a txt file containing the data of the spectrum.
+spectra and a txt file containing the data of the spectrum, as well
+as spectral window plots and data.
 * A Spectrogram plot named **dynamic_fourier.png**
-* A file called _results.txt_, containing all significant frequencies.
+* A file called _results.txt_, containing all significant frequencies,
+written in a csv format.
 
 ## Commandline parameters
 
@@ -133,6 +135,14 @@ lower gap ratio.
 
 ```
 python -m smurfs tests/testFile.data 4 2 -fm=tests/test_frequencyMarker.txt --igr
+```
+* **_-um_ or _--uncertaintyMode_**: With this flag you can choose the mode of uncertainties
+calculation for all frequencies. Either you can choose the uncertainties resulting through
+the least square fit (_-um=Fit_) or the approximation by Montgomery & O'Donoghue (1999)
+(_-um=Montgomery_). You can also skip the uncertainties calculation by setting _-um=None_.
+By default the uncertainties from the least square fit are used.
+```
+python -m smurfs tests/testFile.data 4 2 -fm=tests/test_frequencyMarker.txt -um=Montgomery
 ```
 * **_--version_**: Shows the current version of SMURFS
 

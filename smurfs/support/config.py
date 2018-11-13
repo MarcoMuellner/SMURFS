@@ -1,21 +1,21 @@
 from smurfs.support.singleton import Singleton
 from enum import Enum
 
-class UncertaintiesMode(Enum):
+class UncertaintyMode(Enum):
     none = "None"
     montgomery = "Montgomery"
     fit = "Fit"
 
     @staticmethod
     def content():
-        return [e.value for e in UncertaintiesMode]
+        return [e.value for e in UncertaintyMode]
 
 
 @Singleton
 class Config:
 
     def __init__(self,*args):
-        self.uncertaintiesMode = UncertaintiesMode.none.value
+        self.uncertaintiesMode = UncertaintyMode.none.value
         pass
 
     @property
@@ -23,8 +23,8 @@ class Config:
         return self._errorMode
 
     @uncertaintiesMode.setter
-    def uncertaintiesMode(self, val : UncertaintiesMode):
-        if not isinstance(val, UncertaintiesMode) and val not in UncertaintiesMode.content():
+    def uncertaintiesMode(self, val : UncertaintyMode):
+        if not isinstance(val, UncertaintyMode) and val not in UncertaintyMode.content():
             raise ValueError("Please pass a valid Errormode!")
 
         self._errorMode = val

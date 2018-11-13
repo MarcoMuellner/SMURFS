@@ -1,41 +1,53 @@
 import warnings
 warnings.simplefilter(action='ignore',category=FutureWarning)
-import os
-from plotnine import *
-import numpy as np
-import pandas as pd
 from smurfs.support import *
 import matplotlib.pyplot as pl
+from matplotlib.figure import Figure
+from matplotlib.axes import Axes
+import numpy as np
 from matplotlib.colors import Colormap
 
-@timeit
-def plotCustom(title, data, **kwargs):
-    p = ggplot()
-    for name,(data,linestyle,linetype) in data.items():
-        linetype = 'solid' if linetype is None else linetype
-        try:
-            plotData = pd.DataFrame({'x':data[0],'y':data[1],'Legend':[name]*len(data[0])})
-        except IndexError:
-            plotData = pd.DataFrame({'x': data, 'Legend': [name]})
-        if linestyle == geom_point:
-            p = p+linestyle(aes(x='x',y='y',color='Legend'),data=plotData)
-        elif linestyle == geom_vline:
-            p = p+linestyle(aes(xintercept='x',color='Legend'),data=plotData)
-        else:
-            p = p + linestyle(aes(x='x', y='y', color='Legend'), data=plotData,linetype=linetype)
+pl.rc('font', family='serif')
+pl.rc('xtick', labelsize='x-small')
+pl.rc('ytick', labelsize='x-small')
 
-    p = p+ggtitle(title)+xlab(kwargs['xLabel'])+ylab(kwargs['yLabel'])
-    return p
+@timeit
+def plotCustom(title : str, data : np.ndarray, **kwargs) -> Figure:
+    fig: Figure = pl.figure()
+    ax: Axes = fig.add_subplot(111)
+
+    dotList = ['x', 'o']
+    lineStyleList = ['-', '--', '-.', ':']
+
+    for name,(data,linestyle) in data.items():
+        if linestyle in dotList:
+            ax.plot(data[0], data[1],linestyle,label=name)
+        elif linestyle in lineStyleList:
+            ax.plot(data[0], data[1], linestyle = linestyle, label=name)
+        elif linestyle == '|':
+            ax.axvline(x=data,linestyle='--',label=name)
+        elif linestyle == '/':
+            ax.axhline(y=data,linestyle='--',label=name)
+        else:
+            ax.plot(data[0],data[1],label=name)
+
+    ax.set_title(title)
+    if 'xLabel' in kwargs.keys():
+        ax.set_xlabel(kwargs['xLabel'])
+
+    if 'yLabel' in kwargs.keys():
+        ax.set_ylabel(kwargs['yLabel'])
+    return fig
 
 
 def plotMesh(f,t,i,**kwargs):
     fig = pl.figure()
     ax1 = fig.add_subplot(111)
     if "minimumIntensity" in kwargs.keys():
-        mappable = ax1.pcolormesh(f, t, i,cmap="gnuplot"
+        ax1.pcolormesh(f, t, i,cmap="gnuplot"
                                   ,vmin=kwargs["minimumIntensity"],vmax=np.amax(i))
     else:
-        mappable = ax1.pcolormesh(f, t, i, cmap="gnuplot")
+        ax1.pcolormesh(f, t, i, cmap="gnuplot")
 
     if "tMax" in kwargs.keys():
         ax1.set_ylim(0,kwargs["tMax"])
@@ -67,6 +79,10 @@ def plotMesh(f,t,i,**kwargs):
         ax1.set_xlim(minX*0.95,maxX*1.05)
         ax2.set_xlim(minX* 0.95, maxX * 1.05)
         ax3.set_xlim(minX * 0.95, maxX * 1.05)
+
+    np.savetxt("frequency.txt",f)
+    np.savetxt("time.txt", t)
+    np.savetxt("intensity.txt", i)
 
     if not os.path.exists("results"):
         os.mkdir("results")

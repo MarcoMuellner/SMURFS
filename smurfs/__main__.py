@@ -1,7 +1,7 @@
 import argparse
 from smurfs.analysis import *
 from smurfs._version import __version__
-from smurfs.support.config import UncertaintiesMode,conf
+from smurfs.support.config import UncertaintyMode,conf
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -44,14 +44,14 @@ if __name__ == '__main__':
     parser.add_argument("-igr","--ignoreCutoffRatio",help="Optional parameter. If this is set to True, it will ignore"
                                                           "the gap ratio cutoff criterion",type=bool,default=False)
 
-    parser.add_argument("-um","--uncertaintiesMode", help="Optional parameter. Set this parameter to choose the "
+    parser.add_argument("-um","--uncertaintyMode", help="Optional parameter. Set this parameter to choose the "
                                                          "error determination. Either Montgomery & O'Donoghue (1999),"
                                                          "least square errors (fits) or none", type=str
-                        , choices=UncertaintiesMode.content(),default=UncertaintiesMode.fit.value)
+                        , choices=UncertaintyMode.content(), default=UncertaintyMode.fit.value)
 
     args = parser.parse_args()
 
-    conf().uncertaintiesMode = args.uncertaintiesMode
+    conf().uncertaintiesMode = args.uncertaintyMode
 
     fData = args.frequencyRange.split(",")
     frequencyRange = (float(fData[0]),float(fData[1]))

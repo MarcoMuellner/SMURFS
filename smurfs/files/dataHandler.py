@@ -1,8 +1,5 @@
 import numpy as np
 from smurfs.support import *
-import warnings
-with warnings.catch_warnings():
-    from plotnine import *
 from typing import List,Dict,Tuple
 from collections import OrderedDict
 
@@ -206,6 +203,7 @@ def saveAmpSpectrumAndImage(ampSpectrum: np.ndarray, path: str, name: str):
 
     with cd(path):
         np.savetxt(name+".txt",ampSpectrum.T)
-        plotData = {name:(ampSpectrum, geom_line, 'solid')}
+        plotData = {name:(ampSpectrum, '-')}
         p = plotCustom(name,plotData,xLabel="Frequency(c/d)",yLabel="Amplitude")
-        p.save(name+".pdf")
+        p.savefig(name+".pdf")
+        pl.close(fig=p)

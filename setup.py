@@ -10,14 +10,14 @@ else:
 
 from setuptools import setup,find_packages
 
-reqs = ["pandas==0.22.0"
-        ,"numpy==1.14.2"
-        ,"astropy==3.0.1"
-        ,"scipy==1.0.1"
-        ,"plotnine==0.2.1"
-        ,"pandas==0.22.0"
-        ,"stem==1.6.0"
-        ,"matplotlib==2.2.2"]
+reqs = ["astropy==3.0.5",
+"matplotlib==3.0.2",
+"numpy==1.15.4",
+"pandas==0.23.4",
+"pytest==3.10.1",
+"scipy==1.1.0",
+"stem==1.7.0",
+"uncertainties==3.0.3",]
 
 
 #this is a bit of a hack, due to the inability to build numpy properly in a reasonable amount of time
