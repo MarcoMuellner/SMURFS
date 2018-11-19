@@ -44,6 +44,10 @@ if __name__ == '__main__':
     parser.add_argument("-igr","--ignoreCutoffRatio",help="Optional parameter. If this is set to True, it will ignore"
                                                           "the gap ratio cutoff criterion",type=bool,default=False)
 
+    parser.add_argument("-ssa","--skipSimilarFrequencies",help="If this parameter is set, the frequencies surrounding"
+                                                               "one frequency are in a very similar range, that area "
+                                                               "will be ignored",type=bool,default=False)
+
     parser.add_argument("-um","--uncertaintyMode", help="Optional parameter. Set this parameter to choose the "
                                                          "error determination. Either Montgomery & O'Donoghue (1999),"
                                                          "least square errors (fits) or none", type=str
@@ -52,6 +56,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     conf().uncertaintiesMode = args.uncertaintyMode
+    conf().skipSimilarFrequencies = args.skipSimilarFrequencies
 
     fData = args.frequencyRange.split(",")
     frequencyRange = (float(fData[0]),float(fData[1]))

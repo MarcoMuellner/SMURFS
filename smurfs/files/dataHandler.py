@@ -80,6 +80,10 @@ def getSplits(data: np.ndarray, timeRange: float = -1, overlap: float = 0,ignore
     have the size of 0->50,48->95,...
     :return: A list of chunks of the original data
     """
+
+    arg = np.argsort(data[0])
+    data = np.array((data[0][arg],data[1][arg]))
+
     if data[0][0] != 0:
         data = normalizeData(data)
 

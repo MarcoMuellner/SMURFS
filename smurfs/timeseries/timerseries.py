@@ -64,6 +64,14 @@ def calculateAmplitudeSpectrum(data: np.ndarray, frequencyBoundary: Tuple[float,
     p = p[1:]
     f = f[1:]
 
+    removeSectors = conf().removeSector
+
+    for (lower,upper) in removeSectors:
+        tmpArray = p[f<lower]
+        p = np.append(tmpArray,p[f>upper])
+
+        tmpArray = f[f < lower]
+        f = np.append(tmpArray, f[f > upper])
     # restricting values to upper boundary
     p = p[f < frequencyBoundary[1]]
     f = f[f < frequencyBoundary[1]]
@@ -239,14 +247,21 @@ def cutoffCriterion(frequencyList: List):
             except AttributeError:
                 fList.append(i)
 
-
-    lastFrequencies = np.array(fList[-similarFrequenciesCount:])
+    lowerIndex = 0 if len(fList)<similarFrequenciesCount else len(fList)-similarFrequenciesCount
+    upperIndex = len(fList)-1
+    lastFrequencies = np.array(fList[lowerIndex:upperIndex])
     stdDev = lastFrequencies.std()
     if stdDev < similarityStdDev:
         print(
             term.format("The last " + str(similarFrequenciesCount) + " where to similar, with a standard deviation of "
-                        + str(stdDev) + ". Stopping analysis for this set", term.Color.RED))
-        return False
+                        + str(stdDev), term.Color.RED))
+        if conf().skipSimilarFrequencies:
+            conf().removeSector.append((lastFrequencies.mean()-10*stdDev,lastFrequencies.mean()+10*stdDev))
+            print(term.format(f"Ignoring from {conf().removeSector[-1][0]} to {conf.removeSector[-1][1]}"))
+            return True
+        else:
+            print(term.format(f"Ending this sector"))
+            return False
     else:
         return True
 
@@ -336,6 +351,7 @@ def recursiveFrequencyFinder(data: np.ndarray, snrCriterion: float, windowSize: 
         print(term.format("Interrupted Run", term.Color.RED))
         defines.dieGracefully = True
     finally:
+        conf().removeSector = []
         return frequencyList, f, t, i
 
 def combineDatasets(fList: List[np.ndarray], tList: List[np.ndarray], iList: List[np.ndarray]) -> Tuple[
