@@ -143,6 +143,9 @@ and the last 10 frequencies found were to similar to each other (within 0.05 of 
 frequencies), smurfs will stop looking at this chunk of the data. If you set this flag smurfs will
 continue the analysis, but will not look within 10 sigma of the last frequencies found, hence
 allowing it to find other frequencies there as well.
+```
+python -m smurfs tests/testFile.data 4 2 -fm=tests/test_frequencyMarker.txt --ssa
+```
 * **_-um_ or _--uncertaintyMode_**: With this flag you can choose the mode of uncertainties
 calculation for all frequencies. Either you can choose the uncertainties resulting through
 the least square fit (_-um=Fit_) or the approximation by Montgomery & O'Donoghue (1999)
