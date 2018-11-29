@@ -1,7 +1,7 @@
 from smurfs.files import *
 from smurfs.timeseries import *
 from smurfs.support import *
-import matplotlib.pyplot as pl
+import datetime
 
 @timeit
 def run(file: str, snrCriterion: float, windowSize: float, **kwargs):
@@ -33,6 +33,7 @@ def run(file: str, snrCriterion: float, windowSize: float, **kwargs):
         This will vastly improve speed, but could cut off significant frequencies
         - frequencyMarker: Adds frequency marker to the dynamic fourier plot. If None, no are added.
     """
+    start_time = datetime.datetime.now()
     fileData = readData(file)
     fileData = normalizeData(fileData)
     splitLists = getSplits(fileData,kwargs['timeRange'],kwargs['overlap'],kwargs['ignoreCutoffRatio'])
@@ -86,4 +87,12 @@ def run(file: str, snrCriterion: float, windowSize: float, **kwargs):
 
     waitForProcessesFinished()
     writeResults("results/results.csv",result,nyquistFrequency(fileData))
+
+    gap_ratio = getGapRatio(fileData,0,len(fileData[0])-1)
+
+    delta = datetime.datetime.now() - start_time
+    minutes = delta.seconds//60
+    rest_seconds = delta.seconds%60
+    print(term.format(f"Total runtime: {minutes} minutes and {rest_seconds} seconds",term.Color.GREEN))
+    print(term.format(f"Duty cycle: {'%.2f'%((1-gap_ratio)*100)}%", term.Color.GREEN))
 

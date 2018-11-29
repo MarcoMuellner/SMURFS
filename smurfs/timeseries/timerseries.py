@@ -5,7 +5,7 @@ from scipy.signal.windows import get_window
 from typing import Tuple, List
 import warnings
 
-from smurfs.files import saveAmpSpectrumAndImage
+from smurfs.files import saveAmpSpectrumAndImage,save_frequency_spacing
 from smurfs.support import *
 from uncertainties import ufloat
 from smurfs.support.config import conf,UncertaintyMode
@@ -315,11 +315,12 @@ def recursiveFrequencyFinder(data: np.ndarray, snrCriterion: float, windowSize: 
         savePath += "_{0:0=3d}/".format(int(max(data[0])))
 
         while (snr > snrCriterion):
+
             try:
                 resNoise = np.mean(data[1])
                 frequencyList.append((fit[1], snr, fit[0], fit[2],resNoise))
                 saveStuff = True if kwargs['mode'] == 'Full' else False
-            except:
+            except UnboundLocalError:
                 saveStuff = True
             amp = calculateAmplitudeSpectrum(data, kwargs['frequencyRange'])
             specWindow = calculateSpectralWindow(data, kwargs['frequencyRange'])
@@ -340,7 +341,24 @@ def recursiveFrequencyFinder(data: np.ndarray, snrCriterion: float, windowSize: 
 
             if not cutoffCriterion(frequencyList):
                 break
-        resNoise = np.mean(amp)
+
+        if len(frequencyList) == 0:
+            resNoise = np.mean(data[1])
+            frequencyList.append((fit[1], snr, fit[0], fit[2], resNoise))
+
+        f_arr = np.array([i[0] for i in frequencyList])
+
+        for roll_index in range(1,len(f_arr)):
+            diff = np.abs(f_arr - np.roll(f_arr,roll_index))
+            try:
+                total_diff_list = np.append(total_diff_list,diff)
+            except NameError:
+                total_diff_list = diff
+        try:
+            save_frequency_spacing(total_diff_list,savePath,"frequency_spacing")
+        except NameError:
+            save_frequency_spacing(f_arr - f_arr,savePath,"frequency_spacing")
+
         try:
             if kwargs['mode'] == 'Normal':
                 pass

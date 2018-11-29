@@ -59,6 +59,8 @@ as spectral window plots and data.
 * A Spectrogram plot named **dynamic_fourier.png**
 * A file called _results.txt_, containing all significant frequencies,
 written in a csv format.
+* The frequency spacing of the found frequencies as well as an overview
+plot of them.
 
 ## Commandline parameters
 
@@ -132,10 +134,15 @@ python -m smurfs tests/testFile.data 4 2 -fm=tests/test_frequencyMarker.txt
 * **_-igr_ or _--ignoreCutoffRatio_**: Ignores the skipping of areas where the gap ratio
 would be too small according to smurfs. This means you can also run areas that have a
 lower gap ratio.
-
 ```
 python -m smurfs tests/testFile.data 4 2 -fm=tests/test_frequencyMarker.txt --igr
 ```
+* **_-ssa_ or _--skipSimilarFrequencies_**: It can be possible that smurfs cannot fit a given
+frequency, hence removing it properly (especially when using the *-igr* flag). If this is the case
+and the last 10 frequencies found were to similar to each other (within 0.05 of the stdDev between the
+frequencies), smurfs will stop looking at this chunk of the data. If you set this flag smurfs will
+continue the analysis, but will not look within 10 sigma of the last frequencies found, hence
+allowing it to find other frequencies there as well.
 * **_-um_ or _--uncertaintyMode_**: With this flag you can choose the mode of uncertainties
 calculation for all frequencies. Either you can choose the uncertainties resulting through
 the least square fit (_-um=Fit_) or the approximation by Montgomery & O'Donoghue (1999)

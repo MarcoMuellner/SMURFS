@@ -42,11 +42,11 @@ if __name__ == '__main__':
                         version='SMURFS {version}'.format(version=__version__))
 
     parser.add_argument("-igr","--ignoreCutoffRatio",help="Optional parameter. If this is set to True, it will ignore"
-                                                          "the gap ratio cutoff criterion",type=bool,default=False)
+                                                          "the gap ratio cutoff criterion",action='store_true')
 
     parser.add_argument("-ssa","--skipSimilarFrequencies",help="If this parameter is set, the frequencies surrounding"
                                                                "one frequency are in a very similar range, that area "
-                                                               "will be ignored",type=bool,default=False)
+                                                               "will be ignored",action='store_true')
 
     parser.add_argument("-um","--uncertaintyMode", help="Optional parameter. Set this parameter to choose the "
                                                          "error determination. Either Montgomery & O'Donoghue (1999),"

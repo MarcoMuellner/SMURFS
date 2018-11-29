@@ -2,6 +2,7 @@ import numpy as np
 from smurfs.support import *
 from typing import List,Dict,Tuple
 from collections import OrderedDict
+from uncertainties import unumpy
 
 @timeit
 def normalizeData(data: np.ndarray) -> np.ndarray:
@@ -197,6 +198,26 @@ def createPath(path):
     """
     if not os.path.exists(path):
         os.mkdir(path)
+
+def save_frequency_spacing(data : np.ndarray, path: str, name : str):
+    createPath(path)
+    with cd(path):
+        try:
+            val =  unumpy.nominal_values(data)
+        except: # for uncertainties values
+            val = data
+
+        np.savetxt(f"{name}.txt", val.T)
+
+        fig = pl.figure()
+        pl.hist(val, bins='auto', color='k', rwidth=0.9)
+        pl.xlabel(r"Frequency spacing ($d^{-1}$)")
+        pl.ylabel("Counts")
+        pl.title("Frequency spacing overview")
+        fig.savefig(f"{name}.pdf")
+        pl.close()
+
+
 
 @timeit
 def saveAmpSpectrumAndImage(ampSpectrum: np.ndarray, path: str, name: str):

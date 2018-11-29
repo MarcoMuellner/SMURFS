@@ -21,13 +21,13 @@ def plotCustom(title : str, data : np.ndarray, **kwargs) -> Figure:
 
     for name,(data,linestyle) in data.items():
         if linestyle in dotList:
-            ax.plot(data[0], data[1],linestyle,label=name)
+            ax.plot(data[0], data[1],linestyle,label=name,markersize=3,color='k')
         elif linestyle in lineStyleList:
-            ax.plot(data[0], data[1], linestyle = linestyle, label=name)
+            ax.plot(data[0], data[1], linestyle = linestyle, label=name,linewidth = 1,color='k')
         elif linestyle == '|':
-            ax.axvline(x=data,linestyle='--',label=name)
+            ax.axvline(x=data,linestyle='--',label=name,linewidth = 1,color='blue')
         elif linestyle == '/':
-            ax.axhline(y=data,linestyle='--',label=name)
+            ax.axhline(y=data,linestyle='--',label=name,linewidth = 1,color='red')
         else:
             ax.plot(data[0],data[1],label=name)
 
