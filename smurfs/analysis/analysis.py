@@ -33,10 +33,13 @@ def run(file: str, snrCriterion: float, windowSize: float, **kwargs):
         This will vastly improve speed, but could cut off significant frequencies
         - frequencyMarker: Adds frequency marker to the dynamic fourier plot. If None, no are added.
     """
+    print(term.format(f"Running {file}",term.Color.GREEN))
+    print(term.format(f"-------------------------------------------", term.Color.GREEN))
     start_time = datetime.datetime.now()
     fileData = readData(file)
     fileData = normalizeData(fileData)
     splitLists = getSplits(fileData,kwargs['timeRange'],kwargs['overlap'],kwargs['ignoreCutoffRatio'])
+
     try:
         frequencyMarker = readFrequencyMarker(kwargs['frequencyMarker'])
     except FileNotFoundError:
@@ -49,50 +52,64 @@ def run(file: str, snrCriterion: float, windowSize: float, **kwargs):
         frequencyMarker = None
 
     result = {}
-    createPath("results/")
+    path = f"results/{file.split('/')[-1].split('.')[0]}_snr_{int(snrCriterion)}_w_{int(windowSize)}"
+    if kwargs['timeRange'] != -1:
+        path +=f"_trs_{int(kwargs['timeRange'])}"
+    if kwargs['overlap'] != 0:
+        path +=f"_o_{int(kwargs['overlap'])}"
+    if kwargs['frequencyRange'] != (0,100):
+        path +=f"_fr_{int(kwargs['frequencyRange'][0])}_{int(kwargs['frequencyRange'][1])}"
+
+    path+="/"
+
+    createPath(path)
     fList = []
     tList = []
     iList = []
-    for data in splitLists:
-        print(term.format("Time base from " + str(int(data[0][0])) + " to " + str(int(max(data[0])))+ " days", term.Color.GREEN) )
-        print(term.format("Calculation from "+str(kwargs['frequencyRange'][0])+"c/d to "+str(kwargs['frequencyRange'][1])+"c/d",term.Color.GREEN))
+    total_f = 0
+    with cd(path):
+        for data in splitLists:
+            print(term.format("Time base from " + str(int(data[0][0])) + " to " + str(int(max(data[0])))+ " days", term.Color.GREEN) )
+            print(term.format("Calculation from "+str(kwargs['frequencyRange'][0])+"c/d to "+str(kwargs['frequencyRange'][1])+"c/d",term.Color.GREEN))
 
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            try:
-                frequencyList,f,t,i = recursiveFrequencyFinder(data,snrCriterion,windowSize
-                                                     ,frequencyRange=kwargs['frequencyRange'],mode=kwargs['outputMode'])
-            except (ValueError,IndexError):
-                print(term.format("Time base from "+ str(int(data[0][0])) + " to " + str(int(max(data[0])))+ "failed "
-                         "to perform Lomb-Scargle. Cannot determine Spectrum. Skipping this sector",term.Color.RED))
-                continue
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                try:
+                    frequencyList,f,t,i = recursiveFrequencyFinder(data,snrCriterion,windowSize
+                                                         ,frequencyRange=kwargs['frequencyRange'],mode=kwargs['outputMode'])
+                except (ValueError,IndexError):
+                    print(term.format("Time base from "+ str(int(data[0][0])) + " to " + str(int(max(data[0])))+ "failed "
+                             "to perform Lomb-Scargle. Cannot determine Spectrum. Skipping this sector",term.Color.RED))
+                    continue
 
-            fList.append(f)
-            tList.append(t)
-            iList.append(i)
+                fList.append(f)
+                tList.append(t)
+                iList.append(i)
 
-            print(term.format(f"Residual noise {frequencyList[-1][4]}", term.Color.GREEN))
+                print(term.format(f"Residual noise {abs(frequencyList[-1][4])}", term.Color.GREEN))
 
-            result[(data[0][0], max(data[0]),frequencyList[-1][4])] = frequencyList
-            if defines.dieGracefully:
-                break
+                total_f += len(frequencyList)
+                result[(data[0][0], max(data[0]),frequencyList[-1][4])] = frequencyList
+                if defines.dieGracefully:
+                    break
 
-    f,t,i = combineDatasets(fList,tList,iList)
-    if kwargs['timeRange'] == -1:
-        tMax = max(t)
-    else:
-        tMax = max(t) - kwargs['overlap']
-    plotMesh(f,t,i,frequencyList = frequencyMarker,minimumIntensity = defines.minimumIntensity,tMax = tMax)
+        f,t,i = combineDatasets(fList,tList,iList)
+        if kwargs['timeRange'] == -1:
+            tMax = max(t)
+        else:
+            tMax = max(t) - kwargs['overlap']
+        plotMesh(f,t,i,frequencyList = frequencyMarker,minimumIntensity = defines.minimumIntensity,tMax = tMax)
 
 
-    waitForProcessesFinished()
-    writeResults("results/results.csv",result,nyquistFrequency(fileData))
+        waitForProcessesFinished()
+        writeResults("results.txt",result,nyquistFrequency(fileData))
 
-    gap_ratio = getGapRatio(fileData,0,len(fileData[0])-1)
+        gap_ratio = getGapRatio(fileData,0,len(fileData[0])-1)
 
-    delta = datetime.datetime.now() - start_time
-    minutes = delta.seconds//60
-    rest_seconds = delta.seconds%60
-    print(term.format(f"Total runtime: {minutes} minutes and {rest_seconds} seconds",term.Color.GREEN))
-    print(term.format(f"Duty cycle: {'%.2f'%((1-gap_ratio)*100)}%", term.Color.GREEN))
+        delta = datetime.datetime.now() - start_time
+        minutes = delta.seconds//60
+        rest_seconds = delta.seconds%60
+        print(term.format(f"Total runtime: {minutes} minutes and {rest_seconds} seconds",term.Color.GREEN))
+        print(term.format(f"Duty cycle: {'%.2f'%((1-gap_ratio)*100)}%", term.Color.GREEN))
+        print(term.format(f"Total found frequencies: {total_f}", term.Color.GREEN))
 

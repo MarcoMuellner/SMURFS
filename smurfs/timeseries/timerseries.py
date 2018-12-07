@@ -311,7 +311,7 @@ def recursiveFrequencyFinder(data: np.ndarray, snrCriterion: float, windowSize: 
         snr = 100
         frequencyList = []
         print(term.format("List of frequencys, amplitudes, phases, S/N", term.Color.CYAN))
-        savePath = path + "results/{0:0=3d}".format(int(data[0][0]))
+        savePath = path + "{0:0=3d}".format(int(data[0][0]))
         savePath += "_{0:0=3d}/".format(int(max(data[0])))
 
         while (snr > snrCriterion):
@@ -336,7 +336,7 @@ def recursiveFrequencyFinder(data: np.ndarray, snrCriterion: float, windowSize: 
 
             if saveStuff:
                 saveAmpSpectrumAndImage(amp, savePath, amp_spectrum_filename)
-                saveAmpSpectrumAndImage(specWindow, savePath, spec_window_filename)
+                saveAmpSpectrumAndImage(specWindow, savePath, "")
                 f, t, i = prepareSpectrogram(amp, (int(data[0][0]), int(np.max(data[0]))))
 
             if not cutoffCriterion(frequencyList):

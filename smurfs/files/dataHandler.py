@@ -151,7 +151,7 @@ def getGapRatio(data: np.ndarray, lowerIndex:int, upperIndex:int):
     gaps = np.diff(data[0][lowerIndex:upperIndex])
     ind,values = getMostCommonStep(data)
     # adding 0.1, just to be sure not to get very small flukes in the observation time
-    totalGap = np.sum(gaps[gaps>values[ind]+0.1])
+    totalGap = np.sum(gaps[gaps>(values[ind]+0.1)])
 
     return totalGap/(data[0][upperIndex]-data[0][lowerIndex])
 
@@ -181,22 +181,23 @@ def writeResults(file: str, data: Dict[Tuple[float,float],List[Tuple[float,float
     time points of the chunk, and the value a list of tuples, containing the frequencies and their corresponding snr
     :param mode write mode. Default is 'w':
     """
-    with open(file,mode) as f:
-        f.write(f"Nyquist frequency, whole dataset (c/d);{nyquistFrequency}\n")
-        f.write("Lowerrange;Upperrange;f(c/d);f_err(c/d);snr;amp;amp_err;phase;phase_err\n")
-        for key,value in data.items():
-            f.write(f"{key[0]};{key[1]};;;;;;;\n")
-            f.write(f"Residuals to noise;{key[2]};;;;;;;\n")
 
-            for i in value:
-                text = ";"
-                for j in i:
-                    try:
-                        text+=f";{j.nominal_value};{j.std_dev}"
-                    except AttributeError:
-                        text += f";{j}"
-                text +="\n"
-                f.write(text)
+    for key,value in data.items():
+        savePath = "{0:0=3d}".format(int(key[0]))
+        savePath += "_{0:0=3d}/".format(int(key[1]))
+        header = "f(c/d) f_err(c/d) snr amp amp_err phase phase_err residual_noise"
+        arr = []
+        for i in value:
+            val_list = []
+            for j in i:
+                try:
+                    val_list.append(j.nominal_value)
+                    val_list.append(j.std_dev)
+                except AttributeError:
+                    val_list.append(j)
+            arr.append(val_list)
+
+        np.savetxt(savePath+file,np.array(arr),header=header,comments=f"Nyquist frequency(c/d):{nyquistFrequency}\n")
 
 @timeit
 def createPath(path):
@@ -205,7 +206,7 @@ def createPath(path):
     :param path path to be created:
     """
     if not os.path.exists(path):
-        os.mkdir(path)
+        os.makedirs(path)
 
 def save_frequency_spacing(data : np.ndarray, path: str, name : str):
     createPath(path)

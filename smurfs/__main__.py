@@ -55,19 +55,25 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    conf().uncertaintiesMode = args.uncertaintyMode
-    conf().skipSimilarFrequencies = args.skipSimilarFrequencies
+    if "," in args.fileName:
+        files = args.fileName.split(",")
+    else:
+        files = [args.fileName]
 
-    fData = args.frequencyRange.split(",")
-    frequencyRange = (float(fData[0]),float(fData[1]))
+    for file in files:
+        conf().uncertaintiesMode = args.uncertaintyMode
+        conf().skipSimilarFrequencies = args.skipSimilarFrequencies
 
-    run(args.fileName,args.snr,windowSize=args.windowSize
-                                ,frequencyRange=frequencyRange
-                                ,timeRange=args.timeBaseSplit
-                                ,overlap=args.overlap
-                                ,outputMode=args.outputMode
-                                ,frequencyMarker=args.frequencyMarker
-                                ,ignoreCutoffRatio=args.ignoreCutoffRatio)
+        fData = args.frequencyRange.split(",")
+        frequencyRange = (float(fData[0]), float(fData[1]))
+
+        run(file,args.snr,windowSize=args.windowSize
+                                    ,frequencyRange=frequencyRange
+                                    ,timeRange=args.timeBaseSplit
+                                    ,overlap=args.overlap
+                                    ,outputMode=args.outputMode
+                                    ,frequencyMarker=args.frequencyMarker
+                                    ,ignoreCutoffRatio=args.ignoreCutoffRatio)
 
 
 

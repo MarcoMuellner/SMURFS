@@ -80,14 +80,14 @@ def plotMesh(f,t,i,**kwargs):
         ax2.set_xlim(minX* 0.95, maxX * 1.05)
         ax3.set_xlim(minX * 0.95, maxX * 1.05)
 
-    np.savetxt("frequency.txt",f)
-    np.savetxt("time.txt", t)
-    np.savetxt("intensity.txt", i)
+    np.save("frequency.npy",f)
+    np.save("time.npy", t)
+    np.save("intensity.npy", i)
 
     if not os.path.exists("results"):
         os.mkdir("results")
     try:
-        fig.savefig("results/dynamic_fourier.png")
+        fig.savefig("dynamic_fourier.png")
     except:
         print(term.format("Failed to plot dynamic fourier plot! Maybe only one timerange?",
                           term.Color.YELLOW))

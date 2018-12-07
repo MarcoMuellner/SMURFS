@@ -74,7 +74,8 @@ small examples.
 
 ### Mandatory parameters
 * **fileName**: First parameter, containing the relative
-path to the file containing the data.
+path to the file containing the data. You can also provide multiple files,
+with the _,_ delimeter. It will run them all accordingly
 * **snr**: Signal to noise ratio, used as a cutoff criterion. Will
 try to find all significant frequencies up to this ratio.
 * **windowSize**: Defines the size of the box, where the snr is 
