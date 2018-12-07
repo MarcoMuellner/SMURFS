@@ -17,6 +17,14 @@ def normalizeData(data: np.ndarray) -> np.ndarray:
     x = data[0]
     y = data[1]
 
+    for i in ['nan','-nan']:
+        if i in y.astype(str):
+            n = len(y[y.astype(str)==i])
+            print(term.format(f"You have {n} {i} in your data. These points will be removed.",term.Color.YELLOW))
+
+        x = x[y.astype(str) != i]
+        y = y[y.astype(str) != i]
+
     for i in [np.inf,-np.inf,np.nan]:
         if i in y:
             n = len(y[y==i])
