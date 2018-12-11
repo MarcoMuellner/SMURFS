@@ -2,6 +2,7 @@ from smurfs.files import *
 from smurfs.timeseries import *
 from smurfs.support import *
 import datetime
+import re
 
 @timeit
 def run(file: str, snrCriterion: float, windowSize: float, **kwargs):
@@ -36,38 +37,50 @@ def run(file: str, snrCriterion: float, windowSize: float, **kwargs):
     print(term.format(f"Running {file}",term.Color.GREEN))
     print(term.format(f"-------------------------------------------", term.Color.GREEN))
     start_time = datetime.datetime.now()
-    fileData = readData(file)
-    fileData = normalizeData(fileData)
-    splitLists = getSplits(fileData,kwargs['timeRange'],kwargs['overlap'],kwargs['ignoreCutoffRatio'])
-
     try:
-        frequencyMarker = readFrequencyMarker(kwargs['frequencyMarker'])
-    except FileNotFoundError:
-        if not kwargs['frequencyMarker'] == "":
-            print(term.format("File {0} was not found. No marker will be added to "
-                              "dynamic fourier plot!".format(kwargs['frequencyMarker']),term.Color.RED))
-        frequencyMarker = None
-    except ValueError as e:
-        print(term.format("Error in frequency Marker file. Error: {0}".format(e),term.Color.RED))
-        frequencyMarker = None
+        tic_id = re.findall(r"TIC(\d+)",file)[0]
+        fileData = download_tic(tic_id)
+    except IndexError:
+        fileData = readData(file)
 
-    result = {}
     path = f"results/{file.split('/')[-1].split('.')[0]}_snr_{int(snrCriterion)}_w_{int(windowSize)}"
     if kwargs['timeRange'] != -1:
-        path +=f"_trs_{int(kwargs['timeRange'])}"
+        path += f"_trs_{int(kwargs['timeRange'])}"
     if kwargs['overlap'] != 0:
-        path +=f"_o_{int(kwargs['overlap'])}"
-    if kwargs['frequencyRange'] != (0,100):
-        path +=f"_fr_{int(kwargs['frequencyRange'][0])}_{int(kwargs['frequencyRange'][1])}"
+        path += f"_o_{int(kwargs['overlap'])}"
+    if kwargs['frequencyRange'] != (0, 100):
+        path += f"_fr_{int(kwargs['frequencyRange'][0])}_{int(kwargs['frequencyRange'][1])}"
 
-    path+="/"
-
+    path += "/"
     createPath(path)
-    fList = []
-    tList = []
-    iList = []
-    total_f = 0
+
     with cd(path):
+        fileData = normalizeData(fileData)
+
+        plot_timeseries(file.split("/")[-1],fileData)
+
+        splitLists = getSplits(fileData,kwargs['timeRange'],kwargs['overlap'],kwargs['ignoreCutoffRatio'])
+
+        try:
+            frequencyMarker = readFrequencyMarker(kwargs['frequencyMarker'])
+        except FileNotFoundError:
+            if not kwargs['frequencyMarker'] == "":
+                print(term.format("File {0} was not found. No marker will be added to "
+                                  "dynamic fourier plot!".format(kwargs['frequencyMarker']),term.Color.RED))
+            frequencyMarker = None
+        except ValueError as e:
+            print(term.format("Error in frequency Marker file. Error: {0}".format(e),term.Color.RED))
+            frequencyMarker = None
+
+        result = {}
+
+
+
+        fList = []
+        tList = []
+        iList = []
+        total_f = 0
+
         for data in splitLists:
             print(term.format("Time base from " + str(int(data[0][0])) + " to " + str(int(max(data[0])))+ " days", term.Color.GREEN) )
             print(term.format("Calculation from "+str(kwargs['frequencyRange'][0])+"c/d to "+str(kwargs['frequencyRange'][1])+"c/d",term.Color.GREEN))

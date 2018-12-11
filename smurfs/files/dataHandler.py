@@ -3,7 +3,9 @@ from smurfs.support import *
 from typing import List,Dict,Tuple
 from collections import OrderedDict
 from uncertainties import unumpy
-
+from astroquery.mast import Observations
+from astropy.io import fits
+import os
 @timeit
 def normalizeData(data: np.ndarray) -> np.ndarray:
     """
@@ -229,7 +231,7 @@ def save_frequency_spacing(data : np.ndarray, path: str, name : str):
 
 
 @timeit
-def saveAmpSpectrumAndImage(ampSpectrum: np.ndarray, path: str, name: str):
+def saveAmpSpectrumAndImage(ampSpectrum: np.ndarray, path: str, title : str,file_name: str):
     """
     This function saves the amplitude spectrum and according plots to the results path.
     :param name name of file and image:
@@ -237,8 +239,34 @@ def saveAmpSpectrumAndImage(ampSpectrum: np.ndarray, path: str, name: str):
     createPath(path)
 
     with cd(path):
-        np.savetxt(name+".txt",ampSpectrum.T)
-        plotData = {name:(ampSpectrum, '-')}
-        p = plotCustom(name,plotData,xLabel="Frequency(c/d)",yLabel="Amplitude")
-        p.savefig(name+".pdf")
+        np.savetxt(file_name+".txt",ampSpectrum.T)
+        plotData = {title:(ampSpectrum, '-')}
+        p = plotCustom(title,plotData,xLabel="Frequency(c/d)",yLabel="Amplitude")
+        p.savefig(file_name+".pdf")
         pl.close()
+
+
+def download_tic(tic_id : str):
+    obsTable = Observations.query_criteria(dataproduct_type=["TIMESERIES"], obs_collection="TESS",target_name=tic_id)
+    if len(tic_id) == 0:
+        raise ValueError(f"Cannot find TESS data for {tic_id}")
+    dataProductsByID = Observations.get_product_list(obsTable)
+    Observations.download_products(dataProductsByID)
+    file_name = None
+    for path,subfolder,files in os.walk("mastDownload"):
+        if tic_id in path:
+            if len(files) == 1 and files.endswith("fits"):
+                file_name = f"{path}/{files}"
+            elif len(files) == 2:
+                for i in files:
+                    if i.endswith("lc.fits"):
+                        file_name = f"{path}/{i}"
+
+    if file_name is None:
+        raise ValueError(f"Couldn find proper TESS Data for {tic_id}")
+
+    hdulist = fits.open(file_name)
+    x = hdulist[1].data["TIME"]
+    y = hdulist[1].data["PDCSAP_FLUX"]
+
+    return np.array((x,y))

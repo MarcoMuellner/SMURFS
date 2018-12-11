@@ -335,8 +335,8 @@ def recursiveFrequencyFinder(data: np.ndarray, snrCriterion: float, windowSize: 
 
 
             if saveStuff:
-                saveAmpSpectrumAndImage(amp, savePath, amp_spectrum_filename)
-                saveAmpSpectrumAndImage(specWindow, savePath, "")
+                saveAmpSpectrumAndImage(amp, savePath, amp_spectrum_filename,amp_spectrum_filename)
+                saveAmpSpectrumAndImage(specWindow, savePath, "","spectral_window_"+ str(len(frequencyList)))
                 f, t, i = prepareSpectrogram(amp, (int(data[0][0]), int(np.max(data[0]))))
 
             if not cutoffCriterion(frequencyList):
@@ -362,7 +362,7 @@ def recursiveFrequencyFinder(data: np.ndarray, snrCriterion: float, windowSize: 
         try:
             if kwargs['mode'] == 'Normal':
                 pass
-                saveAmpSpectrumAndImage(amp, savePath, amp_spectrum_filename)
+                saveAmpSpectrumAndImage(amp, savePath, amp_spectrum_filename,amp_spectrum_filename)
         except KeyError:
             pass
     except KeyboardInterrupt:

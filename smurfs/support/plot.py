@@ -11,9 +11,20 @@ pl.rc('font', family='serif')
 pl.rc('xtick', labelsize='x-small')
 pl.rc('ytick', labelsize='x-small')
 
+def plot_timeseries(title : str, data : np.ndarray):
+    fig : Figure = pl.figure(figsize=(12,4))
+    ax : Axes = fig.add_subplot(111)
+
+    ax.plot(data[0],data[1],'x',markersize=3,color='k')
+    ax.set_xlabel("Time (days)")
+    ax.set_ylabel("Flux")
+    ax.set_title(title)
+
+    fig.savefig(f"{title}.pdf")
+
 @timeit
 def plotCustom(title : str, data : np.ndarray, **kwargs) -> Figure:
-    fig: Figure = pl.figure()
+    fig: Figure = pl.figure(figsize=(12,4))
     ax: Axes = fig.add_subplot(111)
 
     dotList = ['x', 'o']
@@ -41,7 +52,7 @@ def plotCustom(title : str, data : np.ndarray, **kwargs) -> Figure:
 
 
 def plotMesh(f,t,i,**kwargs):
-    fig = pl.figure()
+    fig = pl.figure(figsize=(12,4))
     ax1 = fig.add_subplot(111)
     if "minimumIntensity" in kwargs.keys():
         ax1.pcolormesh(f, t, i,cmap="gnuplot"

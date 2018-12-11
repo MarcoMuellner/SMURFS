@@ -6,3 +6,4 @@ pytest==3.10.1
 scipy==1.1.0
 stem==1.7.0
 uncertainties==3.0.3
+astroquery

@@ -17,7 +17,8 @@ reqs = ["astropy==3.0.5",
 "pytest==3.10.1",
 "scipy==1.1.0",
 "stem==1.7.0",
-"uncertainties==3.0.3",]
+"uncertainties==3.0.3",
+"astroquery"]
 
 
 #this is a bit of a hack, due to the inability to build numpy properly in a reasonable amount of time
