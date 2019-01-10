@@ -5,7 +5,7 @@ from scipy.signal.windows import get_window
 from typing import Tuple, List
 import warnings
 
-from smurfs.files import saveAmpSpectrumAndImage,save_frequency_spacing
+from smurfs.files import saveAmpSpectrumAndImage,save_frequency_spacing,getMostCommonStep
 from smurfs.support import *
 from uncertainties import ufloat
 from smurfs.support.config import conf,UncertaintyMode
@@ -307,6 +307,7 @@ def recursiveFrequencyFinder(data: np.ndarray, snrCriterion: float, windowSize: 
     frequencyList = None
     f, t, i = None, None, None
     print(term.format(f"Nyquist frequency: {nyquistFrequency(data)} c/d", term.Color.CYAN))
+    spec_window_saved = False
     try:
         snr = 100
         frequencyList = []
@@ -323,7 +324,8 @@ def recursiveFrequencyFinder(data: np.ndarray, snrCriterion: float, windowSize: 
             except UnboundLocalError:
                 saveStuff = True
             amp = calculateAmplitudeSpectrum(data, kwargs['frequencyRange'])
-            specWindow = calculateSpectralWindow(data, kwargs['frequencyRange'])
+            if not spec_window_saved:
+                specWindow = calculateSpectralWindow(data, kwargs['frequencyRange'])
             snr = computeSignalToNoise(amp, windowSize)
             fit, data = findAndRemoveMaxFrequency(data, amp)
 
@@ -331,12 +333,12 @@ def recursiveFrequencyFinder(data: np.ndarray, snrCriterion: float, windowSize: 
                               term.Color.CYAN))
 
             amp_spectrum_filename = "amplitude_spectrum_f_" + str(len(frequencyList))
-            spec_window_filename = "spectral_window_f_"+str(len(frequencyList))
-
 
             if saveStuff:
                 saveAmpSpectrumAndImage(amp, savePath, amp_spectrum_filename,amp_spectrum_filename)
-                saveAmpSpectrumAndImage(specWindow, savePath, "","spectral_window_"+ str(len(frequencyList)))
+                if not spec_window_saved:
+                    spec_window_saved = True
+                    saveAmpSpectrumAndImage(specWindow, savePath, "","spectral_window_"+ str(len(frequencyList)))
                 f, t, i = prepareSpectrogram(amp, (int(data[0][0]), int(np.max(data[0]))))
 
             if not cutoffCriterion(frequencyList):

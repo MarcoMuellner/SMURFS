@@ -16,6 +16,10 @@ def normalizeData(data: np.ndarray) -> np.ndarray:
     """
     data[0] -= data[0][0]
 
+    data = reduce_y(data)
+    return data
+
+def reduce_y(data: np.ndarray) -> np.ndarray:
     x = data[0]
     y = data[1]
 
@@ -36,7 +40,8 @@ def normalizeData(data: np.ndarray) -> np.ndarray:
         y = y[y != i]
 
     y -= np.mean(y)
-    return np.array((x,y))
+    return np.array((x, y))
+
 
 @timeit
 def readFrequencyMarker(file: str) -> Dict[str,float]:
@@ -153,7 +158,7 @@ def getGapRatio(data: np.ndarray, lowerIndex:int, upperIndex:int):
     gaps = np.diff(data[0][lowerIndex:upperIndex])
     ind,values = getMostCommonStep(data)
     # adding 0.1, just to be sure not to get very small flukes in the observation time
-    totalGap = np.sum(gaps[gaps>(values[ind]+0.1)])
+    totalGap = np.sum(gaps[gaps>(1.2*values[ind])])
 
     return totalGap/(data[0][upperIndex]-data[0][lowerIndex])
 
@@ -252,21 +257,38 @@ def download_tic(tic_id : str):
         raise ValueError(f"Cannot find TESS data for {tic_id}")
     dataProductsByID = Observations.get_product_list(obsTable)
     Observations.download_products(dataProductsByID)
-    file_name = None
+    fits_files = []
     for path,subfolder,files in os.walk("mastDownload"):
-        if tic_id in path:
-            if len(files) == 1 and files.endswith("fits"):
-                file_name = f"{path}/{files}"
-            elif len(files) == 2:
+        tic_folders = []
+        for folder in subfolder:
+            if tic_id in folder:
+                tic_folders.append(folder)
+
+        if tic_folders == []:
+            continue
+
+        for folder in tic_folders:
+            for _,_,files in os.walk(f"{path}/{folder}"):
                 for i in files:
                     if i.endswith("lc.fits"):
-                        file_name = f"{path}/{i}"
+                        fits_files.append(f"{path}/{folder}/{i}")
 
-    if file_name is None:
+    if fits_files == []:
         raise ValueError(f"Couldn find proper TESS Data for {tic_id}")
 
-    hdulist = fits.open(file_name)
-    x = hdulist[1].data["TIME"]
-    y = hdulist[1].data["PDCSAP_FLUX"]
+    for file in fits_files:
+        hdulist = fits.open(file)
+        try:
+            data_new = np.array((hdulist[1].data["TIME"], hdulist[1].data["PDCSAP_FLUX"]))
+            data_new = reduce_y(data_new)
+            data = np.hstack((data,data_new))
+        except:
+            data = np.array((hdulist[1].data["TIME"],hdulist[1].data["PDCSAP_FLUX"]))
+            data = reduce_y(data)
 
-    return np.array((x,y))
+    y = data[1] + 2*abs(min(data[1]))
+    y = -2.5*np.log(y*2.5*10**(-18)/1000)
+    y -= np.mean(y)
+    data = np.array((data[0],y))
+
+    return data

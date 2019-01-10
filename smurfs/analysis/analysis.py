@@ -37,9 +37,14 @@ def run(file: str, snrCriterion: float, windowSize: float, **kwargs):
     print(term.format(f"Running {file}",term.Color.GREEN))
     print(term.format(f"-------------------------------------------", term.Color.GREEN))
     start_time = datetime.datetime.now()
+    save_ascii = False
     try:
-        tic_id = re.findall(r"TIC(\d+)",file)[0]
-        fileData = download_tic(tic_id)
+        if len(file.split(".")) == 1:
+            tic_id = re.findall(r"TIC(\d+)",file)[0]
+            fileData = download_tic(tic_id)
+            save_ascii = True
+        else:
+            raise IndexError("Use filename!")
     except IndexError:
         fileData = readData(file)
 
@@ -115,6 +120,10 @@ def run(file: str, snrCriterion: float, windowSize: float, **kwargs):
 
 
         waitForProcessesFinished()
+
+        if save_ascii:
+            np.savetxt(f"TIC_{tic_id}.txt",fileData)
+
         writeResults("results.txt",result,nyquistFrequency(fileData))
 
         gap_ratio = getGapRatio(fileData,0,len(fileData[0])-1)
