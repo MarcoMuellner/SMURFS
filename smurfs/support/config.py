@@ -40,5 +40,13 @@ class Config:
     def skipSimilarFrequencies(self,val):
         self._skipSimilarFrequencies = val
 
+    @property
+    def skipCutoff(self):
+        return self._skipCutoff
+
+    @skipCutoff.setter
+    def skipCutoff(self,val):
+        self._skipCutoff = val
+
 def conf() -> Config:
     return Config.ins()

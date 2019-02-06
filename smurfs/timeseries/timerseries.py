@@ -251,7 +251,7 @@ def cutoffCriterion(frequencyList: List):
     upperIndex = len(fList)-1
     lastFrequencies = np.array(fList[lowerIndex:upperIndex])
     stdDev = lastFrequencies.std()
-    if stdDev < similarityStdDev:
+    if stdDev < similarityStdDev and not conf():
         print(
             term.format("The last " + str(similarFrequenciesCount) + " where to similar, with a standard deviation of "
                         + str(stdDev), term.Color.RED))
