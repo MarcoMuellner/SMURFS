@@ -257,10 +257,10 @@ def cutoffCriterion(frequencyList: List):
                         + str(stdDev), term.Color.RED))
         if conf().skipSimilarFrequencies:
             conf().removeSector.append((lastFrequencies.mean()-10*stdDev,lastFrequencies.mean()+10*stdDev))
-            print(term.format(f"Ignoring from {conf().removeSector[-1][0]} to {conf.removeSector[-1][1]}"))
+            print(term.format(f"Ignoring from {conf().removeSector[-1][0]} to {conf().removeSector[-1][1]}",term.Color.RED))
             return True
         else:
-            print(term.format(f"Ending this sector"))
+            print(term.format(f"Ending this sector",term.Color.RED))
             return False
     else:
         return True
@@ -333,8 +333,11 @@ def recursiveFrequencyFinder(data: np.ndarray, snrCriterion: float, windowSize: 
                               term.Color.CYAN))
 
             amp_spectrum_filename = "amplitude_spectrum_f_" + str(len(frequencyList))
+            timeseries_filename = kwargs["name"].split(".")[0] + f"_{len(frequencyList)}" + kwargs["name"].split(".")[1]
 
             if saveStuff:
+                plot_timeseries(timeseries_filename, data)
+                np.savetxt(timeseries_filename,data.T)
                 saveAmpSpectrumAndImage(amp, savePath, amp_spectrum_filename,amp_spectrum_filename)
                 if not spec_window_saved:
                     spec_window_saved = True
@@ -364,6 +367,8 @@ def recursiveFrequencyFinder(data: np.ndarray, snrCriterion: float, windowSize: 
         try:
             if kwargs['mode'] == 'Normal':
                 pass
+                plot_timeseries(timeseries_filename, data)
+                np.savetxt(timeseries_filename,data.T)
                 saveAmpSpectrumAndImage(amp, savePath, amp_spectrum_filename,amp_spectrum_filename)
         except KeyError:
             pass

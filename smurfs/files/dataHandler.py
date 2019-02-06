@@ -140,7 +140,9 @@ def getSplits(data: np.ndarray, timeRange: float = -1, overlap: float = 0,ignore
 
 def getMostCommonStep(data: np.ndarray):
     (values, counts) = np.unique(np.diff(data[0]), return_counts=True)
-    ind = np.argmax(counts)
+    ind = int(np.argmax(counts))
+    if counts[ind]*100/np.sum(counts) < 10:
+        counts[ind] = np.median(np.diff(data[0]))
     return ind,values
 
 @timeit

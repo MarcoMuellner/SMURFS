@@ -94,7 +94,7 @@ def run(file: str, snrCriterion: float, windowSize: float, **kwargs):
                 warnings.simplefilter("ignore")
                 try:
                     frequencyList,f,t,i = recursiveFrequencyFinder(data,snrCriterion,windowSize
-                                                         ,frequencyRange=kwargs['frequencyRange'],mode=kwargs['outputMode'])
+                                                         ,frequencyRange=kwargs['frequencyRange'],mode=kwargs['outputMode'],name=file)
                 except (ValueError,IndexError):
                     print(term.format("Time base from "+ str(int(data[0][0])) + " to " + str(int(max(data[0])))+ "failed "
                              "to perform Lomb-Scargle. Cannot determine Spectrum. Skipping this sector",term.Color.RED))
@@ -104,7 +104,10 @@ def run(file: str, snrCriterion: float, windowSize: float, **kwargs):
                 tList.append(t)
                 iList.append(i)
 
-                print(term.format(f"Residual noise {abs(frequencyList[-1][4])}", term.Color.GREEN))
+                try:
+                    print(term.format(f"Residual noise {abs(frequencyList[-1][4])}", term.Color.GREEN))
+                except IndexError:
+                    pass
 
                 total_f += len(frequencyList)
                 result[(data[0][0], max(data[0]),frequencyList[-1][4])] = frequencyList
