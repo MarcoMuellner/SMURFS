@@ -24,7 +24,7 @@ testCasesFrequencyList = [(getSin(1, 5), 1)
             , (np.loadtxt("tests/testFile.dat").T,13)]
 
 testCasesCutoffCriterion = [(np.array([0.1,0.1,0.1,0.2,0,0.3,0.2,0.1,0.2,0.5]),True),
-                            (np.array([0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1]),False),
+                            (np.array([0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1]),True),
                             (np.array([0.1,10,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1]),True),
                             ]
 
