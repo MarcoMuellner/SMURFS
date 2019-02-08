@@ -255,7 +255,7 @@ def saveAmpSpectrumAndImage(ampSpectrum: np.ndarray, path: str, title : str,file
 
 def download_tic(tic_id : str):
     obsTable = Observations.query_criteria(dataproduct_type=["TIMESERIES"], obs_collection="TESS",target_name=tic_id)
-    if len(tic_id) == 0:
+    if len(obsTable) == 0:
         raise ValueError(f"Cannot find TESS data for {tic_id}")
     dataProductsByID = Observations.get_product_list(obsTable)
     Observations.download_products(dataProductsByID)
