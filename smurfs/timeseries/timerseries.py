@@ -22,7 +22,9 @@ def calculateSpectralWindow(data:np.ndarray, frequencyBoundary: Tuple[float, flo
 
     t = data[0]
     W = []
-    f = np.linspace(frequencyBoundary[0],frequencyBoundary[1] , num=50*(frequencyBoundary[1]-frequencyBoundary[0]))
+    integer_min = 100
+    num = integer_min if integer_min*(frequencyBoundary[1]-frequencyBoundary[0]) < integer_min else integer_min*(frequencyBoundary[1]-frequencyBoundary[0])
+    f = np.linspace(frequencyBoundary[0],frequencyBoundary[1] , num=num)
     for i in f:
         w = (1 / len(t)) * np.sum(np.exp(2 * np.pi * 1j * i * t))
         W.append(w)
@@ -251,7 +253,7 @@ def cutoffCriterion(frequencyList: List):
     upperIndex = len(fList)-1
     lastFrequencies = np.array(fList[lowerIndex:upperIndex])
     stdDev = lastFrequencies.std()
-    if stdDev < similarityStdDev and not conf():
+    if stdDev < similarityStdDev and not conf().skipCutoff:
         print(
             term.format("The last " + str(similarFrequenciesCount) + " where to similar, with a standard deviation of "
                         + str(stdDev), term.Color.RED))
@@ -334,6 +336,9 @@ def recursiveFrequencyFinder(data: np.ndarray, snrCriterion: float, windowSize: 
 
             amp_spectrum_filename = "amplitude_spectrum_f_" + str(len(frequencyList))
             timeseries_filename = kwargs["name"].split(".")[0] + f"_{len(frequencyList)}" + kwargs["name"].split(".")[1]
+            timeseries_filename = timeseries_filename.split("/")[-1]
+            timeseries_filename = timeseries_filename.replace(".txt", "")
+            timeseries_filename = timeseries_filename.replace(".dat", "")
 
             if saveStuff:
                 plot_timeseries(timeseries_filename, data)

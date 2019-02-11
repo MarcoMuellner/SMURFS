@@ -1,5 +1,6 @@
 import pytest
 from smurfs.timeseries.timerseries import *
+from scipy.signal import unit_impulse
 
 
 def getSin(amp,frequency):
@@ -104,15 +105,14 @@ def testSpectrogramCreation():
     f,t,i = combineDatasets(fList,tList,iList)
 
 def testSpectralWindow():
-    data = np.loadtxt("tests/period04.dat").T
+    data = np.loadtxt("tests/lightcurve_total.txt").T
     overlay = (data[0]-min(data[0]))<27
     data = np.array((data[0][overlay],data[1][overlay]))
-    ls = calculateAmplitudeSpectrum(data)
-    spectral_window = calculateSpectralWindow(data)
+    ls = calculateAmplitudeSpectrum(data)#,frequencyBoundary=(0,1))
+    spectral_window = calculateSpectralWindow(data)#,frequencyBoundary=(0,1))
 
     ls[1] /= np.amax(ls[1])
     spectral_window[1] /= np.amax(spectral_window[1])
-
 
 
 

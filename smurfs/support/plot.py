@@ -19,7 +19,6 @@ def plot_timeseries(title : str, data : np.ndarray):
     ax.set_xlabel("Time (days)")
     ax.set_ylabel("Flux")
     ax.set_title(title)
-
     fig.savefig(f"{title}.pdf")
 
 @timeit
