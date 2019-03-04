@@ -48,5 +48,13 @@ class Config:
     def skipCutoff(self,val):
         self._skipCutoff = val
 
+    @property
+    def zero_time(self):
+        return self._zero_time
+
+    @zero_time.setter
+    def zero_time(self,val):
+        self._zero_time = val
+
 def conf() -> Config:
     return Config.ins()

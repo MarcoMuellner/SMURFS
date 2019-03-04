@@ -22,7 +22,7 @@ def calculateSpectralWindow(data:np.ndarray, frequencyBoundary: Tuple[float, flo
 
     t = data[0]
     W = []
-    integer_min = 100
+    integer_min = 200
     num = integer_min if integer_min*(frequencyBoundary[1]-frequencyBoundary[0]) < integer_min else integer_min*(frequencyBoundary[1]-frequencyBoundary[0])
     f = np.linspace(frequencyBoundary[0],frequencyBoundary[1] , num=num)
     for i in f:
@@ -335,7 +335,10 @@ def recursiveFrequencyFinder(data: np.ndarray, snrCriterion: float, windowSize: 
                               term.Color.CYAN))
 
             amp_spectrum_filename = "amplitude_spectrum_f_" + str(len(frequencyList))
-            timeseries_filename = kwargs["name"].split(".")[0] + f"_{len(frequencyList)}" + kwargs["name"].split(".")[1]
+            if "." in kwargs["name"]:
+                timeseries_filename = kwargs["name"].split(".")[0] + f"_{len(frequencyList)}" + kwargs["name"].split(".")[1]
+            else:
+                timeseries_filename = kwargs["name"].split(".")[0] + f"_{len(frequencyList)}"
             timeseries_filename = timeseries_filename.split("/")[-1]
             timeseries_filename = timeseries_filename.replace(".txt", "")
             timeseries_filename = timeseries_filename.replace(".dat", "")

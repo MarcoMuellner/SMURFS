@@ -48,6 +48,8 @@ def run(file: str, snrCriterion: float, windowSize: float, **kwargs):
     except IndexError:
         fileData = readData(file)
 
+    conf().zero_time = fileData[0][0]
+
     path = f"results/{file.split('/')[-1].split('.')[0]}_snr_{int(snrCriterion)}_w_{int(windowSize)}"
     if kwargs['timeRange'] != -1:
         path += f"_trs_{int(kwargs['timeRange'])}"

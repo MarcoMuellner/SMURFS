@@ -293,4 +293,7 @@ def download_tic(tic_id : str):
     y -= np.mean(y)
     data = np.array((data[0],y))
 
+    arg = np.argsort(data[0])
+    data = np.array((data[0][arg], data[1][arg]))
+
     return data

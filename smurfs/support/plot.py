@@ -6,6 +6,7 @@ from matplotlib.figure import Figure
 from matplotlib.axes import Axes
 import numpy as np
 from matplotlib.colors import Colormap
+from smurfs.support.config import conf
 
 pl.rc('font', family='serif')
 pl.rc('xtick', labelsize='x-small')
@@ -15,6 +16,7 @@ def plot_timeseries(title : str, data : np.ndarray):
     fig : Figure = pl.figure(figsize=(12,4))
     ax : Axes = fig.add_subplot(111)
 
+    data[0] += conf().zero_time
     ax.plot(data[0],data[1],'x',markersize=3,color='k')
     ax.set_xlabel("Time (days)")
     ax.set_ylabel("Flux")
@@ -94,8 +96,6 @@ def plotMesh(f,t,i,**kwargs):
     np.save("time.npy", t)
     np.save("intensity.npy", i)
 
-    if not os.path.exists("results"):
-        os.mkdir("results")
     try:
         fig.savefig("dynamic_fourier.png")
     except:
