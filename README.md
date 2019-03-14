@@ -155,6 +155,10 @@ By default the uncertainties from the least square fit are used.
 ```
 python -m smurfs tests/testFile.data 4 2 -fm=tests/test_frequencyMarker.txt -um=Montgomery
 ```
+* **_-sc_ or _--skipCutoff_**: With this flag you can ignore the cutoff behaviour. SMURFS will continue looking for frequencies without stoping until it is below a certain SNR.
+```
+python -m smurfs tests/testFile.data 4 2 --sc
+```
 * **_--version_**: Shows the current version of SMURFS
 
 
