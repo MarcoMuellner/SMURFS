@@ -106,7 +106,7 @@ def findMostCommonDiff(time: np.ndarray) -> float:
 
 def findMaxPowerFrequency(ampSpectrum: np.ndarray):
     maxY = max(ampSpectrum[1])
-    maxX = ampSpectrum[0][abs(ampSpectrum[1] - max(ampSpectrum[1])) < 10 ** -4][0]
+    maxX = ampSpectrum[0][np.argsort(np.abs(ampSpectrum[1] - np.amax(ampSpectrum[1])))[0]]
 
     return maxY, maxX
 
@@ -125,7 +125,7 @@ def findAndRemoveMaxFrequency(lightCurve: np.ndarray, ampSpectrum: np.ndarray) -
     arr = [maxY, maxX, 0]
 
     # First fit could provide negative values for amplitude and frequency if the phase is moved by pi. Therefore run
-    # again, with phase moved by pi as long as we don't have positive values for freuqency and amplitude
+    # again, with phase moved by pi as long as we don't have positive values for frequency and amplitude
     while popt[0] < 0 or popt[1] < 0:
         try:
             popt, pcov = curve_fit(sin, lightCurve[0], lightCurve[1], p0=arr)
@@ -317,8 +317,9 @@ def recursiveFrequencyFinder(data: np.ndarray, snrCriterion: float, windowSize: 
         savePath = path + "{0:0=3d}".format(int(data[0][0]))
         savePath += "_{0:0=3d}/".format(int(max(data[0])))
 
+        n = 0
         while (snr > snrCriterion):
-
+            n +=1
             try:
                 resNoise = np.mean(data[1])
                 frequencyList.append((fit[1], snr, fit[0], fit[2],resNoise))
@@ -331,7 +332,7 @@ def recursiveFrequencyFinder(data: np.ndarray, snrCriterion: float, windowSize: 
             snr = computeSignalToNoise(amp, windowSize)
             fit, data = findAndRemoveMaxFrequency(data, amp)
 
-            print(term.format(str(fit[1]) + "c/d     " + str(fit[0]) + "     " + str(fit[2]) + "    " + str(snr),
+            print(term.format("F" + str(n) + "  " +str(fit[1]) + "c/d     " + str(fit[0]) + "     " + str(fit[2]) + "    " + str(snr),
                               term.Color.CYAN))
 
             amp_spectrum_filename = "amplitude_spectrum_f_" + str(len(frequencyList))
