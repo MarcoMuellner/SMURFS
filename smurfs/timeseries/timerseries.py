@@ -2,15 +2,16 @@ import numpy as np
 from astropy.stats import LombScargle
 from scipy.optimize import curve_fit
 from scipy.signal.windows import get_window
-from typing import Tuple, List
+from typing import Tuple, List, Dict
 import warnings
 
 from smurfs.files import saveAmpSpectrumAndImage,save_frequency_spacing,getMostCommonStep
 from smurfs.support import *
 from uncertainties import ufloat
 from smurfs.support.config import conf,UncertaintyMode
+from scipy.integrate import simps
 
-def calculateSpectralWindow(data:np.ndarray, frequencyBoundary: Tuple[float, float] = (0, 50)) -> np.ndarray:
+def spectral_window(data:np.ndarray, frequencyBoundary: Tuple[float, float] = (0, 50)) -> np.ndarray:
     """
     Computes the spectral window of a given dataset. Derivation of formula from Asteroseismology (2010)
     :param data: time series dataset
@@ -21,64 +22,75 @@ def calculateSpectralWindow(data:np.ndarray, frequencyBoundary: Tuple[float, flo
         raise ValueError("Please move the whole dataset through!")
 
     t = data[0]
-    W = []
     integer_min = 200
     num = integer_min if integer_min*(frequencyBoundary[1]-frequencyBoundary[0]) < integer_min else integer_min*(frequencyBoundary[1]-frequencyBoundary[0])
     f = np.linspace(frequencyBoundary[0],frequencyBoundary[1] , num=num)
-    for i in f:
-        w = (1 / len(t)) * np.sum(np.exp(2 * np.pi * 1j * i * t))
-        W.append(w)
 
-    p = np.abs(np.array(W))
+    if max(len(t),len(f)) > 1000 :
+        p = np.abs([(1 / len(t)) * np.sum(2 * np.pi * 1j * i * t) for i in f])
+    else:
+        p = np.abs( 1 / len(t) * np.sum(2 * np.pi * 1j * np.outer(t, f), axis=0))
+
     return np.array((f,p))
 
-@timeit
-def calculateAmplitudeSpectrum(data: np.ndarray, frequencyBoundary: Tuple[float, float] = (0, 50)) -> np.ndarray:
+def window_function(df,nyq,ls = None,width = None, oversampling = 10):
+    if width is None:
+        width = 100 * df
+
+    freq_cen = 0.5 * nyq
+
+    Nfreq = None
+
+    while Nfreq == None:
+        Nfreq = int(oversampling * width / df)
+        freq = freq_cen + (df / oversampling) * np.arange(-Nfreq, Nfreq, 1)
+        if np.amin(freq) < 0:
+            Nfreq = None
+            width *= 0.5
+
+    x = 0.5 * np.sin(2 * np.pi * freq_cen * ls.t) + 0.5 * np.cos(2 * np.pi * freq_cen * ls.t)
+
+    # Calculate power spectrum for the given frequency range:
+    ls = LombScargle(ls.t, x, center_data=True)
+    power = ls.power(freq, method='fast', normalization='psd', assume_regular_frequency=True)
+    power /= power[int(len(power) / 2)]  # Normalize to have maximum of one
+
+    freq -= freq_cen
+    return freq, power
+
+def fundamental_spacing_integral(df,nyq,ls):
+    freq, window = window_function(df,nyq,ls,width=100*df, oversampling=5)
+    df = simps(window, freq)
+    return df
+
+
+def amplitude_spectrum(data: np.ndarray, frequencyRange = None) -> np.ndarray:
     """
-    This function computes a periodogram using the LombScargle algorithm. There are different implementations available
-    and we leave it up to astropy to decide which one should be applied
-    :param data: Temporal dataset, an observation by some kind instrument. First axis time, second axis flux
-    :param frequencyBoundary: Boundary that should be considered when computing the spectrum
-    :return: 2-D Array, containing frequency (first array) and amplitude (second array)
+    Computes a given periodogram from the lightcurve
+    :param data: Lightcurve dataset
+    :return: Periodogram from the dataset
     """
-    if frequencyBoundary[0] > frequencyBoundary[1]:
-        raise ValueError(b"f_min has to be smaller than f_max!")
+    indx = np.isfinite(data[1])
+    df = 1 / (np.amax(data[0][indx]) - np.amin(data[0][indx]))  # Hz
+    ls = LombScargle(data[0][indx], data[1][indx], center_data=True)
+    nyq = nyquistFrequency(data)
 
-    # create object
-    ls = LombScargle(data[0], data[1], normalization='psd')
+    df = fundamental_spacing_integral(df,nyq,ls)
 
-    # if defined max frequency is bigger than the nyquist frequency, cutoff at nyquist
-    nFrequency = nyquistFrequency(data)
-    if frequencyBoundary[1] > nFrequency:
-        print(term.format("Upper Frequencyrange of {0} is higher than Nyquist frequency. Please be aware that "
-                          "this can lead to problems with the results!"
-                          .format(frequencyBoundary[1], nyquistFrequency),term.Color.YELLOW))
+    freq = np.arange(df ,nyq, df)
+    power = ls.power(freq, normalization='psd', method='fast', assume_regular_frequency=True)
 
-    max_frequency = frequencyBoundary[1]
+    N = len(ls.t)
+    tot_MS = np.sum((ls.y - np.mean(ls.y)) ** 2) / N
+    tot_lomb = np.sum(power)
+    normfactor = tot_MS / tot_lomb
+    power = np.sqrt(power * normfactor)
 
-    # compute Spectrum
-    f, p = ls.autopower(minimum_frequency=frequencyBoundary[0], maximum_frequency=max_frequency, samples_per_peak=100)
+    if frequencyRange is not None and len(frequencyRange) == 2:
+        power = power[np.logical_and(freq > frequencyRange[0], freq < frequencyRange[1])]
+        freq = freq[np.logical_and(freq > frequencyRange[0], freq < frequencyRange[1])]
 
-    # normalization of psd in order to get good amplitudes
-    p = np.sqrt(4 / len(data[0])) * np.sqrt(p)
-
-    # removing first item
-    p = p[1:]
-    f = f[1:]
-
-    removeSectors = conf().removeSector
-
-    for (lower,upper) in removeSectors:
-        tmpArray = p[f<lower]
-        p = np.append(tmpArray,p[f>upper])
-
-        tmpArray = f[f < lower]
-        f = np.append(tmpArray, f[f > upper])
-    # restricting values to upper boundary
-    p = p[f < frequencyBoundary[1]]
-    f = f[f < frequencyBoundary[1]]
-
-    return np.array((f, p))
+    return np.array((freq,power))
 
 
 @timeit
@@ -88,30 +100,13 @@ def nyquistFrequency(data: np.ndarray) -> float:
     :param data: Dataset, in time domain.
     :return: Nyquist frequency of dataset
     """
-    return float(1 / (2 * findMostCommonDiff(data[0])))
+    indx = np.isfinite(data[1])
+    return float(1/(2*np.median(np.diff(data[0][indx]))))
 
+def sin(x: np.ndarray, amp: float, f: float, phase: float) -> np.ndarray:
+    return amp * np.sin(2 * np.pi * f * x + phase)
 
-def findMostCommonDiff(time: np.ndarray) -> float:
-    """
-    Finds the most common time difference between two data points.
-    :param time:
-    :return:
-    """
-    realDiffX = time[1:len(time)] - time[0:len(time) - 1]
-    realDiffX = realDiffX[realDiffX!=0]
-    (values, counts) = np.unique(realDiffX, return_counts=True)
-    mostCommon = values[np.argmax(counts)]
-    return mostCommon
-
-
-def findMaxPowerFrequency(ampSpectrum: np.ndarray):
-    maxY = max(ampSpectrum[1])
-    maxX = ampSpectrum[0][np.argsort(np.abs(ampSpectrum[1] - np.amax(ampSpectrum[1])))[0]]
-
-    return maxY, maxX
-
-
-def findAndRemoveMaxFrequency(lightCurve: np.ndarray, ampSpectrum: np.ndarray) -> Tuple[List[float], np.ndarray]:
+def remove_max_frequency(light_curve : np.ndarray, amp_spectrum : np.ndarray) -> Tuple[List[float],np.ndarray]:
     """
     Finds the frequency with maximum power in the spectrum, fits it to the dataset and than removes this frequency
     from the initial dataset.
@@ -120,48 +115,37 @@ def findAndRemoveMaxFrequency(lightCurve: np.ndarray, ampSpectrum: np.ndarray) -
     :param ampSpectrum: Amplitude spectrum of lightCurve. Should be computed with the same dataset that is provided here
     :return: Fit parameters, Reduced lightcurve
     """
-    maxY, maxX = findMaxPowerFrequency(ampSpectrum)
-    popt = [-1, -1, -1]
-    arr = [maxY, maxX, 0]
+    y = max(amp_spectrum[1])
+    x = amp_spectrum[0][np.argsort(np.abs(amp_spectrum[1] - np.amax(amp_spectrum[1])))[0]]
 
-    # First fit could provide negative values for amplitude and frequency if the phase is moved by pi. Therefore run
-    # again, with phase moved by pi as long as we don't have positive values for frequency and amplitude
-    while popt[0] < 0 or popt[1] < 0:
-        try:
-            popt, pcov = curve_fit(sin, lightCurve[0], lightCurve[1], p0=arr)
-        except RuntimeError:
-            print(term.format("Failed to find a good fit for Frequency " + str(maxX) + "c/d", term.Color.RED))
-            raise RuntimeError
+    return remove_frequency(light_curve,x,y)
 
-        # if amp < 0 -> move sin to plus using the phase by adding pi
-        if popt[0] < 0 or popt[1] < 0:
-            popt[0] = abs(popt[0])
-            popt[1] = abs(popt[1])
-            popt[2] += -np.pi if popt[2] > np.pi else np.pi
-        arr = popt
+def remove_frequency(light_curve : np.ndarray, f : float, amp : float) -> Tuple[List,np.ndarray]:
+    arr = [amp,f,0]
+    bounds = [[0,0,0],[np.inf,np.inf,2*np.pi]]
 
-        while popt[2] < 0:
-            popt[2] += 2*np.pi
-
-        while popt[2] > 2*np.pi:
-            popt[2] -= 2*np.pi
-
-        retLightCurve = np.array((lightCurve[0], lightCurve[1] - sin(lightCurve[0], *popt)))
+    try:
+        popt, pcov = curve_fit(sin, light_curve[0], light_curve[1], p0=arr,bounds=bounds)
+    except RuntimeError:
+        print(term.format("Failed to find a good fit for Frequency " + str(f) + "c/d", term.Color.RED))
+        raise RuntimeError
 
     if defines.minimumIntensity is None or defines.minimumIntensity > popt[0]:
         defines.minimumIntensity = popt[0]
 
     perr = np.sqrt(np.diag(pcov))
+
     ret = []
+
     if conf().uncertaintiesMode == UncertaintyMode.fit.value:
         for i in range(0,len(popt)):
             ret.append(ufloat(popt[i],perr[i]))
     elif conf().uncertaintiesMode == UncertaintyMode.montgomery.value:
         #computation of uncertainties with Montgomery & O'Donoghue (1999)
-        sigma_m = np.std(lightCurve[1])
-        sigma_amp = np.sqrt(2/len(lightCurve[1])) * sigma_m
-        sigma_f = np.sqrt(6/len(lightCurve[1])) * (1/(np.pi*max(lightCurve[0])-min(lightCurve[0]))) * sigma_m/popt[0]
-        sigma_phi = np.sqrt(2/len(lightCurve[1])) * sigma_m/popt[0]
+        sigma_m = np.std(light_curve[1])
+        sigma_amp = np.sqrt(2/len(light_curve[1])) * sigma_m
+        sigma_f = np.sqrt(6/len(light_curve[1])) * (1/(np.pi*max(light_curve[0])-min(light_curve[0]))) * sigma_m/popt[0]
+        sigma_phi = np.sqrt(2/len(light_curve[1])) * sigma_m/popt[0]
         ret = [
             ufloat(popt[0],sigma_amp),
             ufloat(popt[1],sigma_f),
@@ -173,67 +157,39 @@ def findAndRemoveMaxFrequency(lightCurve: np.ndarray, ampSpectrum: np.ndarray) -
     else:
         raise ValueError(f"Unknown error computation with {conf().uncertaintiesMode}")
 
+    ret_lc = light_curve[1] - sin(light_curve[0],*popt)
 
-    return ret, retLightCurve
+    return ret, np.array((light_curve[0],ret_lc))
 
+def adjacent_minima(amp_spectrum : np.ndarray,f : float) -> Tuple[int,int]:
+    x = amp_spectrum[0]
+    y = amp_spectrum[1]
 
-@timeit
-def computeSignalToNoise(ampSpectrum: np.ndarray, windowSize: float) -> float:
-    """
-    Computes signal to noise ratio at frequency f.
-    :param ampSpectrum:
-    :param windowSize:
-    :return:
-    """
-    y = ampSpectrum[1]
-    x = ampSpectrum[0]
+    idx = np.argsort(np.abs(amp_spectrum[0] - f))[0]
 
-    # find minimas adjacent to maxima of y
-    lowerMinima, upperMinima = findNextMinimas(y)
-    singleStep = np.mean(np.diff(x))
-    length_half = int(windowSize / singleStep)
+    extrema = np.diff(np.sign(np.diff(y)))
 
-    data = np.append(y[lowerMinima - length_half:lowerMinima], y[upperMinima:upperMinima + length_half])
-    meanValue = np.mean(data)
-    maxVal = y[abs(y - max(y)) < 10 ** -6][0]
+    ids = np.sort(np.abs(np.argwhere(extrema < 0).T - idx))
 
-    return float(maxVal / meanValue)
+    try:
+        lower = ids[ids < idx][::-1][0]
+    except IndexError:
+        lower = 0
+    try:
+        upper = ids[ids > idx][0]
+    except IndexError:
+        upper = len(x)
 
+    return lower,upper
 
-@timeit
-def findNextMinimas(yData: np.ndarray) -> Tuple[int, int]:
-    index = int(np.where(abs(yData - max(yData)) < 10 ** -6)[0][0])
-    minimaFound = False
-    counter = 1
-    lowerMinima = -1
-    upperMinima = -1
-    while (minimaFound == False):
-        negCounter = index - counter
-        posCounter = index + counter
-        if negCounter -1 < 0:
-            lowerMinima = negCounter
-        elif checkMinima(yData, negCounter):
-            lowerMinima = negCounter
+def signal_to_noise(amp_spectrum : np.ndarray, f : float, amp : float, window_size : float):
+    lower,upper = adjacent_minima(amp_spectrum,f)
 
-        if posCounter + 1 >= len(yData):
-            upperMinima = posCounter
-        elif checkMinima(yData, posCounter):
-            upperMinima = posCounter
+    df = np.mean(np.diff(amp_spectrum[0]))
+    points = int(window_size//df)
 
-        if lowerMinima != -1 and upperMinima != -1:
-            minimaFound = True
-        counter += 1
-
-    return lowerMinima, upperMinima
-
-
-def checkMinima(yData: np.ndarray, counter: int) -> bool:
-    return yData[counter] < yData[counter + 1] and yData[counter] < yData[counter - 1]
-
-
-def sin(x: np.ndarray, amp: float, f: float, phase: float) -> np.ndarray:
-    return amp * np.sin(2 * np.pi * f * x + phase)
-
+    noise = np.mean(np.hstack((amp_spectrum[1][lower-points:lower],amp_spectrum[1][upper:upper+points])))
+    return amp/noise
 
 def cutoffCriterion(frequencyList: List):
     if len(frequencyList) < similarFrequenciesCount:
@@ -268,154 +224,17 @@ def cutoffCriterion(frequencyList: List):
         return True
 
 
-def prepareSpectrogram(spectrum: np.ndarray, timerange: Tuple[int, int]) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
-    t = np.linspace(timerange[0], timerange[1],num=5)
-    f = spectrum[0]
-    i = spectrum[1]
+def find_frequencies(data : np.ndarray, snr_cutoff : float, window_size : float):
+    snr = None
+    lc_res = data
 
-    if defines.maxiLength is None:
-        defines.maxiLength = len(i)
-    elif defines.maxiLength > len(i):
-        i = np.append(i, np.linspace(0, 0, num=defines.maxiLength - len(i)))
-    else:
-        i = i[0:defines.maxiLength]
+    n = 1
 
-    tmpSpectrum = i
-
-    for j in range(0, len(t) - 1):
-        i = np.vstack((i, tmpSpectrum))
-
-    return f, t, i
-
-
-def recursiveFrequencyFinder(data: np.ndarray, snrCriterion: float, windowSize: float, path: str = "",
-                             **kwargs):
-    """
-    Recursively finds all significant frequencies of a given dataset. Takes a lightcurve, transforms it
-    using the lomb scargle algorithm, finds the frequency with highest power, fits the frequency to the
-    dataset and subtracts it from the dataset. Also prepares the result for the spectrogram plotted at the
-    end of the dataset.
-    :param data: Input data. Represents a lightcurve. Requires a two dimensional array, with the first
-    dimension being the temporal axis, and the second the intensity.
-    :param snrCriterion: Cutoff criterion that defines significancy. The code computes the signal to noise
-    ratio after each subtraction of the fitted data and checks if the given SNR is bigger than the calculated
-    SNR. If this is the case, the algorithm stops.
-    :param windowSize: The windowsize of the spectrum. There are also sanity checks going on here, if the
-    maximum frequency is higher than the nyquist frequency than the nyquist frequency is used.
-    :param path: Path to save stuff to.
-    :param kwargs: Commandline parameters.
-    :return: List of significant frequencies, initial spectrum, time array, intensity matrix (for spectrogram)
-    """
-    frequencyList = None
-    f, t, i = None, None, None
-    print(term.format(f"Nyquist frequency: {nyquistFrequency(data)} c/d", term.Color.CYAN))
-    spec_window_saved = False
-    try:
-        snr = 100
-        frequencyList = []
-        print(term.format("List of frequencys, amplitudes, phases, S/N", term.Color.CYAN))
-        savePath = path + "{0:0=3d}".format(int(data[0][0]))
-        savePath += "_{0:0=3d}/".format(int(max(data[0])))
-
-        n = 0
-        while (snr > snrCriterion):
-            n +=1
-            try:
-                resNoise = np.mean(data[1])
-                frequencyList.append((fit[1], snr, fit[0], fit[2],resNoise))
-                saveStuff = True if kwargs['mode'] == 'Full' else False
-            except UnboundLocalError:
-                saveStuff = True
-            amp = calculateAmplitudeSpectrum(data, kwargs['frequencyRange'])
-            if not spec_window_saved:
-                specWindow = calculateSpectralWindow(data, kwargs['frequencyRange'])
-            snr = computeSignalToNoise(amp, windowSize)
-            fit, data = findAndRemoveMaxFrequency(data, amp)
-
-            print(term.format("F" + str(n) + "  " +str(fit[1]) + "c/d     " + str(fit[0]) + "     " + str(fit[2]) + "    " + str(snr),
-                              term.Color.CYAN))
-
-            amp_spectrum_filename = "amplitude_spectrum_f_" + str(len(frequencyList))
-            if "." in kwargs["name"]:
-                timeseries_filename = kwargs["name"].split(".")[0] + f"_{len(frequencyList)}" + kwargs["name"].split(".")[1]
-            else:
-                timeseries_filename = kwargs["name"].split(".")[0] + f"_{len(frequencyList)}"
-            timeseries_filename = timeseries_filename.split("/")[-1]
-            timeseries_filename = timeseries_filename.replace(".txt", "")
-            timeseries_filename = timeseries_filename.replace(".dat", "")
-
-            if saveStuff:
-                plot_timeseries(timeseries_filename, data)
-                np.savetxt(timeseries_filename,data.T)
-                saveAmpSpectrumAndImage(amp, savePath, amp_spectrum_filename,amp_spectrum_filename)
-                if not spec_window_saved:
-                    spec_window_saved = True
-                    saveAmpSpectrumAndImage(specWindow, savePath, "","spectral_window_"+ str(len(frequencyList)))
-                f, t, i = prepareSpectrogram(amp, (int(data[0][0]), int(np.max(data[0]))))
-
-            if not cutoffCriterion(frequencyList):
-                break
-
-        if len(frequencyList) == 0:
-            resNoise = np.mean(data[1])
-            frequencyList.append((fit[1], snr, fit[0], fit[2], resNoise))
-
-        f_arr = np.array([i[0] for i in frequencyList])
-
-        for roll_index in range(1,len(f_arr)):
-            diff = np.abs(f_arr - np.roll(f_arr,roll_index))
-            try:
-                total_diff_list = np.append(total_diff_list,diff)
-            except NameError:
-                total_diff_list = diff
-        try:
-            save_frequency_spacing(total_diff_list,savePath,"frequency_spacing")
-        except NameError:
-            save_frequency_spacing(f_arr - f_arr,savePath,"frequency_spacing")
-
-        try:
-            if kwargs['mode'] == 'Normal':
-                pass
-                plot_timeseries(timeseries_filename, data)
-                np.savetxt(timeseries_filename,data.T)
-                saveAmpSpectrumAndImage(amp, savePath, amp_spectrum_filename,amp_spectrum_filename)
-        except KeyError:
-            pass
-    except KeyboardInterrupt:
-        print(term.format("Interrupted Run", term.Color.RED))
-        defines.dieGracefully = True
-    finally:
-        conf().removeSector = []
-        return frequencyList, f, t, i
-
-def combineDatasets(fList: List[np.ndarray], tList: List[np.ndarray], iList: List[np.ndarray]) -> Tuple[
-    np.ndarray, np.ndarray, np.ndarray]:
-    if fList == [] or tList == [] or iList == []:
-        raise ValueError(term.format("Size of all result lists must be equal!",term.Color.RED))
-
-    for i in tList:
-        try:
-            t = np.hstack((t,i))
-        except UnboundLocalError:
-            t = i
-
-    for j in iList:
-        try:
-            intensity = np.row_stack((intensity,j[:,::]))
-        except UnboundLocalError:
-            intensity = j[:,::]
-
-    for k in fList:
-        if len(k[::]) == intensity.shape[1]:
-            f = k[::]
-            break
-
-    with warnings.catch_warnings():
-        warnings.filterwarnings("error")
-
-        try:
-            intensity = np.log10(intensity)
-        except RuntimeWarning:
-            pass
-
-    return f,t,intensity
+    while snr == None or snr > snr_cutoff:
+        amp_spectrum = amplitude_spectrum(lc_res)
+        fit, lc_res = remove_max_frequency(lc_res,amp_spectrum)
+        snr = signal_to_noise(amp_spectrum,fit[1],fit[0],window_size)
+        print(term.format(
+            "F" + str(n) + "  " + str(fit[1]) + "c/d     " + str(fit[0]) + "     " + str(fit[2]) + "    " + str(snr),
+            term.Color.CYAN))
+        n+=1
