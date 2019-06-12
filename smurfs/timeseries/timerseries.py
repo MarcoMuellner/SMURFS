@@ -122,13 +122,14 @@ def findAndRemoveMaxFrequency(lightCurve: np.ndarray, ampSpectrum: np.ndarray) -
     """
     maxY, maxX = findMaxPowerFrequency(ampSpectrum)
     popt = [-1, -1, -1]
-    arr = [maxY, maxX, 0]
+    arr = [maxY, maxX, np.pi/2]
+    limits = [[0, 0, 0], [np.inf, np.inf, np.inf]]
 
     # First fit could provide negative values for amplitude and frequency if the phase is moved by pi. Therefore run
     # again, with phase moved by pi as long as we don't have positive values for frequency and amplitude
     while popt[0] < 0 or popt[1] < 0:
         try:
-            popt, pcov = curve_fit(sin, lightCurve[0], lightCurve[1], p0=arr)
+            popt, pcov = curve_fit(sin, lightCurve[0], lightCurve[1], p0=arr,bounds=limits)
         except RuntimeError:
             print(term.format("Failed to find a good fit for Frequency " + str(maxX) + "c/d", term.Color.RED))
             raise RuntimeError

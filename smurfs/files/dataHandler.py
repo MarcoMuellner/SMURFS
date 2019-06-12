@@ -14,7 +14,7 @@ def normalizeData(data: np.ndarray) -> np.ndarray:
     :param data: The dataset, probably read through readData
     :return: A normalized dataset
     """
-    data[0] -= data[0][0]
+#    data[0] -= data[0][0]
 
     data = reduce_y(data)
     return data
@@ -97,14 +97,17 @@ def getSplits(data: np.ndarray, timeRange: float = -1, overlap: float = 0,ignore
     :return: A list of chunks of the original data
     """
 
+    if timeRange == -1:
+        return [data]
+
     arg = np.argsort(data[0])
     data = np.array((data[0][arg],data[1][arg]))
 
     if data[0][0] != 0:
         data = normalizeData(data)
 
-    if timeRange == -1:
-        timeRange = max(data[0])
+    #if timeRange == -1:
+    #    timeRange = max(data[0])
     dataPoints = []
     i = 0
 

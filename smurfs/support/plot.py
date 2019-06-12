@@ -16,8 +16,7 @@ def plot_timeseries(title : str, data : np.ndarray):
     fig : Figure = pl.figure(figsize=(12,4))
     ax : Axes = fig.add_subplot(111)
 
-    data[0] += conf().zero_time
-    ax.plot(data[0],data[1],'x',markersize=3,color='k')
+    ax.plot(data[0] + conf().zero_time,data[1],'x',markersize=3,color='k')
     ax.set_xlabel("Time (days)")
     ax.set_ylabel("Flux")
     ax.set_title(title)
