@@ -5,7 +5,7 @@ from scipy.signal.windows import get_window
 from typing import Tuple, List
 import warnings
 
-from smurfs.files import saveAmpSpectrumAndImage,save_frequency_spacing,getMostCommonStep
+from smurfs.files import saveAmpSpectrumAndImage,save_frequency_spacing
 from smurfs.support import *
 from uncertainties import ufloat
 from smurfs.support.config import conf,UncertaintyMode
@@ -99,7 +99,7 @@ def findMostCommonDiff(time: np.ndarray) -> float:
     """
     realDiffX = time[1:len(time)] - time[0:len(time) - 1]
     realDiffX = realDiffX[realDiffX!=0]
-    (values, counts) = np.unique(realDiffX, return_counts=True)
+    (values,counts) = np.unique(np.around(realDiffX,4),return_counts=True)
     mostCommon = values[np.argmax(counts)]
     return mostCommon
 

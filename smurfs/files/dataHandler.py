@@ -141,12 +141,12 @@ def getSplits(data: np.ndarray, timeRange: float = -1, overlap: float = 0,ignore
 
     return dataPoints
 
-def getMostCommonStep(data: np.ndarray):
-    (values, counts) = np.unique(np.diff(data[0]), return_counts=True)
-    ind = int(np.argmax(counts))
-    if counts[ind]*100/np.sum(counts) < 10:
-        counts[ind] = np.median(np.diff(data[0]))
-    return ind,values
+def getMostCommonStep(time: np.ndarray):
+    realDiffX = time[1:len(time)] - time[0:len(time) - 1]
+    realDiffX = realDiffX[realDiffX!=0]
+    (values,counts) = np.unique(np.around(realDiffX,4),return_counts=True)
+    mostCommon = values[np.argmax(counts)]
+    return mostCommon
 
 @timeit
 def getGapRatio(data: np.ndarray, lowerIndex:int, upperIndex:int):
@@ -160,13 +160,17 @@ def getGapRatio(data: np.ndarray, lowerIndex:int, upperIndex:int):
     :param upperIndex: The upper index of the subset that is to be analyzed
     :return: A value between 0 and 1. The higher this value is, the worse the dataset is.
     """
+    t_delta = getMostCommonStep(data[0])
     gaps = np.diff(data[0][lowerIndex:upperIndex])
+    mask = gaps > 1.5*t_delta
+    return np.sum(gaps[mask])/np.sum(gaps)
+    """
     ind,values = getMostCommonStep(data)
     # adding 0.1, just to be sure not to get very small flukes in the observation time
     totalGap = np.sum(gaps[gaps>(1.2*values[ind])])
 
     return totalGap/(data[0][upperIndex]-data[0][lowerIndex])
-
+    """
 
 
 @timeit
