@@ -1,3 +1,1 @@
-from .support import *
-from .plot import *
-from .defines import *
+from smurfs.support.mprint import *
