@@ -6,8 +6,8 @@ from smurfs.support.mprint import *
 
 def load_file(file : str) -> LightCurve:
     """
-    Loads and normalizes file content
-    :param file: Name of file including path
+    Loads and normalizes target content
+    :param file: Name of target including path
     :return: LightCurve object
     """
     if not os.path.exists(file):
@@ -29,5 +29,5 @@ def load_file(file : str) -> LightCurve:
     lc = lc.remove_outliers(4)
     lc = lc.remove_nans()
     mprint(f"Total observation length: {'%.2f' % (lc.time[-1] - lc.time[0])} days.",log)
-    mprint("Extracted data from file!",info)
+    mprint("Extracted data from target!",info)
     return lc

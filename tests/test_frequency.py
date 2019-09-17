@@ -1,7 +1,7 @@
 import pytest
 from lightkurve import search_lightcurvefile
-from smurfs.smurfs.frequency_finder import sin_multiple,Frequency
-from smurfs.smurfs.smurfs import Smurfs
+from smurfs._smurfs.frequency_finder import sin_multiple,Frequency
+from smurfs._smurfs.smurfs import Smurfs
 from smurfs.preprocess.tess import download_lc
 import numpy as np
 

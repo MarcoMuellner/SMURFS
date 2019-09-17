@@ -1,7 +1,7 @@
 import pytest
 from lightkurve import search_lightcurvefile
-from smurfs.smurfs.frequency_finder import FFinder,sin,sin_multiple
-from smurfs.smurfs.smurfs import Smurfs
+from smurfs._smurfs.frequency_finder import FFinder,sin,sin_multiple
+from smurfs._smurfs.smurfs import Smurfs
 from smurfs.preprocess.tess import download_lc
 import numpy as np
 
@@ -9,9 +9,9 @@ import numpy as np
 def testffinder():
     s = Smurfs(file='testFile.dat')
     s.run(4,f_min=15,skip_similar=True,mode='lmfit')
-    #ff.plot(show=True)
+    #_ff.plot(show=True)
     s.plot_pdg(show=True)
-    print(s.result)
+    print(s._result)
 
 #@pytest.mark.skip(reason="Temporary Skip")
 def testCreatedSin():

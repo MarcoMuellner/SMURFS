@@ -103,6 +103,7 @@ class Frequency:
     def lmfit_fit(self):
         """
         Uses lmfit to perform the sin fit on the light curve.
+
         :return:
         """
 
@@ -137,6 +138,7 @@ class Frequency:
         'Pre whitens' a given light curve. As an estimate, the method always uses the frequency with maximum power.
         It then performs the fit according to the mode parameter, and returns a Lightcurve object with the reduced
         light curve
+
         :param mode:'scipy' or 'lmfit'
         :return: Pre-whitened lightcurve object
         """
@@ -151,8 +153,9 @@ class Frequency:
 
     def plot(self, ax: Axes = None, show=False, use_guess=False) -> Union[None, Axes]:
         """
-        Plots the periodogramm. If a fit was already performed, it uses the fit result by default. This
+        Plots the periodogramm. If a fit was already performed, it uses the fit _result by default. This
         can be overwritten by setting use_guess to True
+
         :param ax: Axis object
         :param show: Shows the plot
         :param use_guess: Uses the guess
