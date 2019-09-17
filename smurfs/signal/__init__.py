@@ -1,1 +1,1 @@
-from smurfs.signal.periodogramm import Periodogram
+from smurfs.signal.periodogram import Periodogram

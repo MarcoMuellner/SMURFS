@@ -10,7 +10,7 @@ from typing import Union, List
 from pandas import DataFrame as df
 import astropy.units as u
 
-from smurfs.signal.periodogramm import Periodogram
+from smurfs.signal.periodogram import Periodogram
 from smurfs.support.mprint import *
 
 
@@ -24,6 +24,19 @@ def sin_multiple(x: np.ndarray, *params):  # amp_list: List[float], f_list : Lis
         y += sin(x, params[i], params[i + 1], params[i + 2])
 
     return y
+
+def m_od_uncertainty(lc : LightCurve,a : float):
+    # computation of uncertainties with Montgomery & O'Donoghue (1999), used when there are no
+    # uncertainties in the flux of the light curve
+    N = len(lc.flux)
+    sigma_m = np.std(lc.flux)
+    sigma_amp = np.sqrt(2 / N) * sigma_m
+    sigma_f = np.sqrt(6 / N) * (1 / (np.pi * max(lc.time) - min(lc.time))) * sigma_m / a
+    sigma_phi = np.sqrt(2 / N) * sigma_m / a
+    try:
+        return sigma_amp.value,sigma_f.value,sigma_phi.value
+    except AttributeError:
+        return sigma_amp, sigma_f, sigma_phi
 
 
 class Frequency:
@@ -44,6 +57,7 @@ class Frequency:
         self.f = np.nan
         self.phase = np.nan
         self.significant = self.snr > snr
+        self.label = ""
 
     @property
     def snr(self) -> float:
@@ -71,7 +85,7 @@ class Frequency:
                f_guess,  # frequency
                0  # phase --> set to center
                ]
-        limits = [[0*5*amp_guess, 0.5*f_guess, 0], [1.5*amp_guess, 1.5*f_guess, 1]]
+        limits = [[0 * 5 * amp_guess, 0.5 * f_guess, 0], [1.5 * amp_guess, 1.5 * f_guess, 1]]
         try:
             popt, pcov = curve_fit(sin, self.lc.time, self.lc.flux, p0=arr, bounds=limits)
         except RuntimeError:
@@ -96,21 +110,23 @@ class Frequency:
         amp_guess = self.pdg.max_power.value
 
         model = Model(sin)
-        model.set_param_hint('amp', value=self.pdg.max_power.value, min=0.5*amp_guess, max=1.5*amp_guess)
-        model.set_param_hint('f', value=self.pdg.frequency_at_max_power.value, min=0.5*f_guess, max=1.5*f_guess)
-        model.set_param_hint('phase', value=0, min=0, max=1)
+        model.set_param_hint('amp', value=amp_guess, min=0.5 * amp_guess, max=1.5 * amp_guess)
+        model.set_param_hint('f', value=f_guess, min=0.5 * f_guess, max=1.5 * f_guess)
+        model.set_param_hint('phase', value=0.5, min=0, max=1)
 
         result = model.fit(self.lc.flux, x=self.lc.time)
+
+        # after first fit, vary only phase
+        model = Model(sin)
+        model.set_param_hint('amp', value=result.values['amp'], vary=False)
+        model.set_param_hint('f', value=result.values['f'], vary=False)
+        model.set_param_hint('phase', value=0.5, min=0, max=1)
+        result = model.fit(self.lc.flux, x=self.lc.time)
+
         a, f, ph = result.values['amp'], result.values['f'], result.values['phase']
 
-        if self.flux_error is None:
-            # computation of uncertainties with Montgomery & O'Donoghue (1999), used when there are no
-            # uncertainties in the flux of the light curve
-            N = len(self.lc.flux)
-            sigma_m = np.std(self.lc.flux)
-            sigma_amp = np.sqrt(2 / N) * sigma_m
-            sigma_f = np.sqrt(6 / N) * (1 / (np.pi * max(self.lc.time) - min(self.lc.time))) * sigma_m / a
-            sigma_phi = np.sqrt(2 / N) * sigma_m / a
+        if self.flux_error is None or True:
+            sigma_amp,sigma_f,sigma_phi = m_od_uncertainty(self.lc,a)
             return ufloat(a, sigma_amp), ufloat(f, sigma_f), ufloat(ph, sigma_phi), [a, f, ph]
         else:
             # todo incorporate flux error into fit
@@ -261,13 +277,15 @@ class FFinder:
             lc = f.pre_whiten(mode)
             res_noise = np.mean(lc.flux)
 
+            f.label = f"F{len(result)}"
+
             mprint(f"F{len(result)}   {f.f} {f_u}   {f.amp} {a_u}   {f.phase}   {f.snr} ", state)
 
             result.append(f)
             noise_list.append(res_noise)
 
             if improve_fit:
-                self._improve_fit(result)
+                self._improve_fit(result, mode=mode)
 
             # check for similarity of last 10 frequencies
             if len(result) > 10:
@@ -315,14 +333,14 @@ class FFinder:
 
     def _scipy_fit(self, result: List[Frequency]) -> List[Frequency]:
         arr = []
-        boundaries = [[],[]]
+        boundaries = [[], []]
         for r in result:
             arr.append(r.amp.nominal_value)
             arr.append(r.f.nominal_value)
             arr.append(r.phase.nominal_value)
 
-            boundaries[0] += [r.amp.nominal_value*0.5, r.f.nominal_value*0.5, 0]
-            boundaries[1] += [r.amp.nominal_value*1.5, r.f.nominal_value*1.5, 1]
+            boundaries[0] += [r.amp.nominal_value * 0.5, r.f.nominal_value * 0.5, 0]
+            boundaries[1] += [r.amp.nominal_value * 1.5, r.f.nominal_value * 1.5, 1]
         try:
             popt, pcov = curve_fit(sin_multiple, self.lc.time, self.lc.flux, p0=arr)
         except RuntimeError:
@@ -337,7 +355,32 @@ class FFinder:
         return result
 
     def _lmfit_fit(self, result: List[Frequency]):
-        pass
+        models = []
+        for f in result:
+            m = Model(sin, prefix=f.label)
+
+            m.set_param_hint(f.label + 'amp', value=f.amp.nominal_value, min=0.8 * f.amp.nominal_value,
+                             max=1.2 * f.amp.nominal_value)
+            m.set_param_hint(f.label + 'f', value=f.f.nominal_value, min=0.8 * f.f.nominal_value,
+                             max=1.2 * f.f.nominal_value)
+            m.set_param_hint(f.label + 'phase', value=f.phase.nominal_value, min=0.8 * f.phase.nominal_value,
+                             max=1.2 * f.phase.nominal_value)
+            models.append(m)
+
+        model : Model= np.sum(models)
+        try:
+            fit_result = model.fit(self.lc.flux.value, x=self.lc.time)
+        except AttributeError:
+            fit_result = model.fit(self.lc.flux, x=self.lc.time)
+
+        for f in result:
+            sigma_amp, sigma_f, sigma_phi = m_od_uncertainty(self.lc, fit_result.values[f.label + 'amp'])
+            f.amp = ufloat(fit_result.values[f.label + 'amp'],sigma_amp)
+            f.f = ufloat(fit_result.values[f.label + 'f'],sigma_f)
+            f.phase = ufloat(fit_result.values[f.label + 'phase'],sigma_phi)
+
+        return result
+
 
     def _improve_fit(self, result: List[Frequency], mode='scipy') -> List[Frequency]:
         if mode == 'scipy':

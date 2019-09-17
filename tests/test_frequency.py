@@ -11,6 +11,7 @@ param_list = [
     #,([0.6,0.2,0,0.1,6,0,10,5,6],(10,5,6))
 ]
 
+@pytest.mark.skip(reason="Temporary Skip")
 @pytest.mark.parametrize('value',param_list)
 def testFrequency(value):
     x = np.linspace(0,100,num=5000)

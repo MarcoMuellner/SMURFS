@@ -19,7 +19,7 @@ from matplotlib.axes import Axes
 from smurfs.preprocess.tess import download_lc
 from smurfs.preprocess.file import load_file
 from smurfs.smurfs.frequency_finder import FFinder, sin_multiple
-from smurfs.signal.periodogramm import Periodogram
+from smurfs.signal.periodogram import Periodogram
 from smurfs.support.support import cd
 import smurfs.support.mprint as mpr
 from smurfs.support.mprint import *
