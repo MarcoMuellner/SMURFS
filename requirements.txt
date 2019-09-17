@@ -12,4 +12,4 @@ eleanor
 lmfit
 numba
 jupyter
-pyfcomb==1.0.3
+pyfcomb==1.0.4
