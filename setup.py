@@ -22,4 +22,7 @@ setuptools.setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
+    entry_points={
+        'console_scripts':['smurfs = smurfs.__main__:main']
+    }
 )

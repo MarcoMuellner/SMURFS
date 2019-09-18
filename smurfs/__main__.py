@@ -3,8 +3,12 @@ import argparse
 from smurfs._smurfs.smurfs import Smurfs
 from smurfs.__version__ import __version__
 import os
+import sys
 
-if __name__ == '__main__':
+def main(args = None):
+    if args is None:
+        args = sys.argv[1:]
+
     parser = argparse.ArgumentParser()
 
     parser.add_argument("target", help="Target for the frequency analysis. Can be either a target, or "
@@ -90,7 +94,7 @@ if __name__ == '__main__':
     parser.add_argument("-igr", "--ignoreCutoffRatio", help="Optional parameter. If this is set to True, it will ignore"
                                                             "the gap ratio cutoff criterion", action='store_true')
 
-    args = parser.parse_args()
+    args = parser.parse_args(args)
 
     if "," in args.target:
         targets = args.target.split(",")
@@ -98,20 +102,24 @@ if __name__ == '__main__':
         targets = [args.target]
 
     if len(targets) == 1:
-        target = targets[1]
+        target = targets[0]
 
-        f_min = None if args.fr.split(",")[0] else float(args.fr.split(",")[0])
-        f_max = None if args.fr.split(",")[1] else float(args.fr.split(",")[1])
+        f_min = None if args.frequencyRange.split(",")[0] else float(args.frequencyRange.split(",")[0])
+        f_max = None if args.frequencyRange.split(",")[1] else float(args.frequencyRange.split(",")[1])
 
         if len(target.split(".")) == 2 and os.path.basename(target).split(".")[1] in ['txt','dat']:
             s = Smurfs(file=target)
         else:
-            s = Smurfs(target_name=target,flux=args.ft)
+            s = Smurfs(target_name=target,flux=args.fluxType)
 
         s.run(snr=args.snr,window_size=args.windowSize,f_min=f_min,f_max=f_max,
-              skip_similar=args.ssa,similar_chancel=not args.sc,extend_frequencies=args.ef,improve_fit=args.dif,
-              mode=args.fm)
-        s.save(args.sp,args.so)
+              skip_similar=args.skipSimilarFrequencies,similar_chancel=not args.skipCutoff
+              ,extend_frequencies=args.extendFrequencies,improve_fit=args.disableImproveFrequencies
+              ,mode=args.fitMethod)
+        s.save(args.savePath,args.storeObject)
     else:
         #todo mpi stuff
         pass
+
+if __name__ == "__main__":
+    main()

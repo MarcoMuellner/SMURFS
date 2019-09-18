@@ -23,6 +23,7 @@ from smurfs.support.support import cd
 import smurfs.support.mprint as mpr
 from smurfs.support.mprint import *
 
+
 class Smurfs:
     """
     The *Smurfs* class is the main way to start your frequency analysis. The workflow for a generic problem is the
@@ -58,7 +59,9 @@ class Smurfs:
     :param label: Optional label for the star. Results will be saved under this name
     :param quiet_flag: Quiets Smurfs (no more print message will be piped to stdout)
     """
-    def __init__(self, file=None, time=None, flux=None, target_name=None, flux_type='PDCSAP', label=None, quiet_flag=False):
+
+    def __init__(self, file=None, time=None, flux=None, target_name=None, flux_type='PDCSAP', label=None,
+                 quiet_flag=False):
         mpr.quiet = quiet_flag
         if target_name is not None:
             self.lc: TessLightCurve = download_lc(target_name, flux_type)
@@ -67,9 +70,10 @@ class Smurfs:
             else:
                 self.label = label
         elif time is None and flux is None and file is None:
-            raise AttributeError(ctext("You need to either pass a target path or time and flux of the lightcurve object",error))
+            raise AttributeError(
+                ctext("You need to either pass a target path or time and flux of the lightcurve object", error))
         elif time is not None and flux is not None:
-            mprint("Creating light curve object from time and flux input.",log)
+            mprint("Creating light curve object from time and flux input.", log)
             self.lc: LightCurve = LightCurve(time=time, flux=flux)
             if label is None:
                 self.label = 'LC'
@@ -83,24 +87,25 @@ class Smurfs:
                 self.label = label
 
         else:
-            raise AttributeError(ctext("You need to either pass a target path or time and flux of the lightcurve object",error))
+            raise AttributeError(
+                ctext("You need to either pass a target path or time and flux of the lightcurve object", error))
 
         self.pdg: Periodogram = Periodogram.from_lightcurve(self.lc)
         self._result = df([], columns=['f_obj', 'frequency', 'amp', 'phase', 'snr', 'res_noise', 'significant'])
         self._combinations = df([],
                                 columns=["Name", "ID", "Frequency", "Amplitude", "Solution", "Residual", "Independent",
-                                        "Other_Solutions"])
+                                         "Other_Solutions"])
         self._ff: FFinder = None
         self._spectral_window = None
 
-        #Original light curve to perform some processsing on that
+        # Original light curve to perform some processsing on that
         self.original_lc = self.lc.copy()
 
-        #Target settings
+        # Target settings
         self.target_name = target_name
         self.flux_type = flux_type
 
-        #Frequency settings
+        # Frequency settings
         self.snr = np.nan
         self.window_size = np.nan
         self.f_min = np.nan
@@ -109,7 +114,7 @@ class Smurfs:
         self.similar_chanel = None
         self.extend_frequencies = np.nan
 
-        mprint(f"Duty cycle for {self.label}: {'%.2f' % (self.duty_cycle*100)}%",info)
+        mprint(f"Duty cycle for {self.label}: {'%.2f' % (self.duty_cycle * 100)}%", info)
 
     @property
     def combinations(self):
@@ -234,18 +239,20 @@ class Smurfs:
         *lightkurve.LightCurve.flatten*.
         """
         if return_trend:
-            self.lc, self.trend = self.original_lc.flatten(window_length, polyorder, return_trend, break_tolerance, niters,
-                                                  sigma, mask, **kwargs)
+            self.lc, self.trend = self.original_lc.flatten(window_length, polyorder, return_trend, break_tolerance,
+                                                           niters,
+                                                           sigma, mask, **kwargs)
         else:
-            self.lc = self.original_lc.flatten(window_length, polyorder, return_trend, break_tolerance, niters, sigma, mask,
-                                      **kwargs)
+            self.lc = self.original_lc.flatten(window_length, polyorder, return_trend, break_tolerance, niters, sigma,
+                                               mask,
+                                               **kwargs)
 
         self.lc = self.lc.remove_outliers(4)
         self.lc = self.lc.remove_nans()
         self.pdg: Periodogram = Periodogram.from_lightcurve(self.lc)
 
     def run(self, snr: float = 4, window_size: float = 2, f_min: float = None, f_max: float = None,
-            skip_similar: bool = False, similar_chancel=True, extend_frequencies: int = 0,improve_fit = True,
+            skip_similar: bool = False, similar_chancel=True, extend_frequencies: int = 0, improve_fit=True,
             mode='lmfit'):
         """
         Starts the frequency analysis by instantiating a *FrequencyFinder* object and running it. After finishing the
@@ -274,9 +281,11 @@ class Smurfs:
         self._result = self._ff.run(snr=snr, window_size=window_size, skip_similar=skip_similar,
                                     similar_chancel=similar_chancel
                                     , extend_frequencies=extend_frequencies, improve_fit=improve_fit, mode=mode)
-        self._combinations = get_combinations(self._result.index.tolist(),
-                                              unp.nominal_values(self._result.frequency.tolist())
-                                              , unp.nominal_values(self._result.amp.tolist()))
+        self._combinations = get_combinations(self._result[self._result.significant == True].index.tolist(),
+                                              unp.nominal_values(
+                                                  self._result[self._result.significant == True].frequency.tolist())
+                                              , unp.nominal_values(
+                self._result[self._result.significant == True].amp.tolist()))
 
         print(f'\x1b[7;32;40m {self.label} Analysis done! \x1b[0m')
 
@@ -287,24 +296,24 @@ class Smurfs:
         :param show: if this is set, pyplot.show() is called
         :param kwargs: kwargs for *lightkurve.LightCurve.scatter*
         """
-        for i in ['color','ylabel','normalize']:
+        for i in ['color', 'ylabel', 'normalize']:
             try:
                 del kwargs[i]
             except KeyError:
                 pass
 
-        ax : Axes = self.lc.scatter(color='k', ylabel="Flux [mag]",normalize=False, **kwargs)
+        ax: Axes = self.lc.scatter(color='k', ylabel="Flux [mag]", normalize=False, **kwargs)
         ax.set_ylim(ax.get_ylim()[::-1])
         if len(self._result) > 0:
             params = []
 
-            for i,j,k in zip(self._result.amp, self._result.frequency, self._result.phase):
+            for i, j, k in zip(self._result.amp, self._result.frequency, self._result.phase):
                 params.append(i.nominal_value)
                 params.append(j.nominal_value)
                 params.append(k.nominal_value)
 
-            y = sin_multiple(self.lc.time,*params)
-            ax.plot(self.lc.time,y,color='red',linewidth=1)
+            y = sin_multiple(self.lc.time, *params)
+            ax.plot(self.lc.time, y, color='red', linewidth=1)
         if show:
             pl.show()
 
@@ -319,7 +328,7 @@ class Smurfs:
         :return:
         """
         if self._ff is None:
-            self.pdg.plot(color='k',ylabel='Amplitude [mag]', **kwargs)
+            self.pdg.plot(color='k', ylabel='Amplitude [mag]', **kwargs)
         else:
             self._ff.plot(show=show, plot_insignificant=plot_insignificant, **kwargs)
 
@@ -331,11 +340,11 @@ class Smurfs:
         :param store_obj: If this is set, the Smurfs object is stored, and can be later reloaded.
         """
         if not os.path.exists(path):
-            raise IOError(ctext(f"'{path}' does not exist!",error))
+            raise IOError(ctext(f"'{path}' does not exist!", error))
 
-        mprint("Saving results, this may take a bit ...",warn)
+        mprint("Saving results, this may take a bit ...", warn)
 
-        proj_path = os.path.join(path, self.label)
+        proj_path = os.path.join(path, self.label.replace(" ","_"))
         index = 1
         while True:
             if not os.path.exists(proj_path):
@@ -397,7 +406,7 @@ class Smurfs:
         print(f'\x1b[7;32;40m {self.label} Data saved! \x1b[0m')
 
     @staticmethod
-    def from_path(path : str):
+    def from_path(path: str):
         """
         Loads a smurfs object from path. You need to have set the *store_obj* flag in *save*, for this object to be
         saved.
@@ -407,16 +416,12 @@ class Smurfs:
 
         load_file = None
 
-        for r,d,f, in os.walk(path):
+        for r, d, f, in os.walk(path):
             for file in f:
                 if '.smurfs' in file:
-                    load_file = os.path.join(r,file)
+                    load_file = os.path.join(r, file)
 
         if load_file is None:
-            raise IOError(ctext(f"Can't find any .smurfs file in {path}!"),error)
+            raise IOError(ctext(f"Can't find any .smurfs file in {path}!"), error)
 
-        return pickle.load(open(load_file,'rb'))
-
-
-
-
+        return pickle.load(open(load_file, 'rb'))

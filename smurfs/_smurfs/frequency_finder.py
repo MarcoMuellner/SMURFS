@@ -329,55 +329,58 @@ class FFinder:
         extensions = 0
 
         mprint(f"List of frequencies, amplitudes, phases, S/N", state)
-        while True:
-            f = Frequency(lc.time, lc.flux, window_size, snr, f_min=self.f_min, f_max=self.f_max,
-                          rm_ranges=self.rm_ranges)
+        try:
+            while True:
+                f = Frequency(lc.time, lc.flux, window_size, snr, f_min=self.f_min, f_max=self.f_max,
+                              rm_ranges=self.rm_ranges)
 
-            # check significance of frequency
-            if not f.significant:
-                if extensions >= extend_frequencies:
-                    mprint(f"Stopping extraction after {len(result)} frequencies.", warn)
-                    break
-                else:
-                    mprint(f"Found insignificant frequency, extending extraction ... ", warn)
-                    extensions += 1  # extend frequencies after last snr cutoff
-            else:
-                extensions = 0
-
-            lc = f.pre_whiten(mode)
-            res_noise = np.mean(lc.flux)
-
-            f.label = f"F{len(result)}"
-
-            mprint(f"F{len(result)}   {f.f} {f_u}   {f.amp} {a_u}   {f.phase}   {f.snr} ", state)
-
-            result.append(f)
-            noise_list.append(res_noise)
-
-            if improve_fit:
-                self._improve_fit(result, mode=mode)
-
-            # check for similarity of last 10 frequencies
-            if len(result) > 10:
-                f_list = unp.nominal_values([i.f for i in result])[-10:]
-                stdDev = f_list.std()
-                if stdDev < 0.05 and skip_similar:
-                    mprint(f"Last 10 frequencies where too similar. Skipping region between "
-                           f"{'%.2f' % (f_list.mean() - 10 * stdDev)} {f_u} and "
-                           f"{'%.2f' % (f_list.mean() + 10 * stdDev)} {f_u}.", warn)
-                    if self.rm_ranges is None:
-                        self.rm_ranges = [(f_list.mean() - 10 * stdDev, f_list.mean() + 10 * stdDev)]
+                # check significance of frequency
+                if not f.significant:
+                    if extensions >= extend_frequencies:
+                        mprint(f"Stopping extraction after {len(result)} frequencies.", warn)
+                        break
                     else:
-                        self.rm_ranges.append((f_list.mean() - 10 * stdDev, f_list.mean() + 10 * stdDev))
-                elif stdDev < 0.05 and similar_chancel:
-                    mprint(f"Last 10 frequencies had a std dev of {'%.2f' % stdDev}. Stopping run.", warn)
-                    break
+                        mprint(f"Found insignificant frequency, extending extraction ... ", warn)
+                        extensions += 1  # extend frequencies after last snr cutoff
+                else:
+                    extensions = 0
 
-        mprint(f"Total frequencies: {len(result)}", info)
-        self.res_lc = lc
-        self.res_pdg = Periodogram.from_lightcurve(lc, self.f_min, self.f_max)
-        self.result = df([[i, i.f, i.amp, i.phase, i.snr, j, i.significant] for i, j in zip(result, noise_list)]
-                         , columns=self.columns)
+                lc = f.pre_whiten(mode)
+                res_noise = np.mean(lc.flux)
+
+                f.label = f"F{len(result)}"
+
+                mprint(f"F{len(result)}   {f.f} {f_u}   {f.amp} {a_u}   {f.phase}   {f.snr} ", state)
+
+                result.append(f)
+                noise_list.append(res_noise)
+
+                if improve_fit:
+                    self._improve_fit(result, mode=mode)
+
+                # check for similarity of last 10 frequencies
+                if len(result) > 10:
+                    f_list = unp.nominal_values([i.f for i in result])[-10:]
+                    stdDev = f_list.std()
+                    if stdDev < 0.05 and skip_similar:
+                        mprint(f"Last 10 frequencies where too similar. Skipping region between "
+                               f"{'%.2f' % (f_list.mean() - 10 * stdDev)} {f_u} and "
+                               f"{'%.2f' % (f_list.mean() + 10 * stdDev)} {f_u}.", warn)
+                        if self.rm_ranges is None:
+                            self.rm_ranges = [(f_list.mean() - 10 * stdDev, f_list.mean() + 10 * stdDev)]
+                        else:
+                            self.rm_ranges.append((f_list.mean() - 10 * stdDev, f_list.mean() + 10 * stdDev))
+                    elif stdDev < 0.05 and similar_chancel:
+                        mprint(f"Last 10 frequencies had a std dev of {'%.2f' % stdDev}. Stopping run.", warn)
+                        break
+        except KeyboardInterrupt:
+            raise KeyboardInterrupt
+        finally:
+            mprint(f"Total frequencies: {len(result)}", info)
+            self.res_lc = lc
+            self.res_pdg = Periodogram.from_lightcurve(lc, self.f_min, self.f_max)
+            self.result = df([[i, i.f, i.amp, i.phase, i.snr, j, i.significant] for i, j in zip(result, noise_list)]
+                             , columns=self.columns)
         return self.result
 
     def plot(self, ax: Axes = None, show=False, plot_insignificant=False, **kwargs):

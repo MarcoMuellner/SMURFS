@@ -12,3 +12,4 @@ lmfit==0.9.14
 jupyter==1.0.0
 pyfcomb==1.0.7
 Sphinx
+nbsphinx
