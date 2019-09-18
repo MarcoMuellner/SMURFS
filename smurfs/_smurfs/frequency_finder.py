@@ -385,7 +385,7 @@ class FFinder:
         return result
 
 
-    def _improve_fit(self, result: List[Frequency], mode='scipy') -> List[Frequency]:
+    def _improve_fit(self, result: List[Frequency], mode='lmfit') -> List[Frequency]:
         if mode == 'scipy':
             return self._scipy_fit(result)
         elif mode == 'lmfit':

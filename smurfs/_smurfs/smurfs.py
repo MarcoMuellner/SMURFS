@@ -11,7 +11,6 @@ import numpy as np
 from pandas import DataFrame as df
 import os
 import pickle
-from numba import jit
 from pyfcomb import get_combinations
 from uncertainties import unumpy as unp
 from matplotlib.axes import Axes
