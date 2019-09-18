@@ -62,3 +62,7 @@ html_static_path = ['_static']
 # If true, the current module name will be prepended to all description
 # unit titles (such as .. function::).
 add_module_names = False
+
+# The master toctree document.
+master_doc = 'index'
+
