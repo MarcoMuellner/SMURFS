@@ -1,5 +1,5 @@
 Notebook examples:
-=========
+==================
 
 Below you can find a set of examples, that show
 the usage of Smurfs within a Python script. We use notebooks as examples,

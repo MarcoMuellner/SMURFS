@@ -7,10 +7,12 @@ Smurfs
 ------
 .. autoclass:: smurfs._smurfs.smurfs.Smurfs
    :members:
+
 FFinder
 -------
 .. autoclass:: smurfs._smurfs.frequency_finder.FFinder
    :members:
+
 Frequency
 ---------
 .. autoclass:: smurfs._smurfs.frequency_finder.Frequency
