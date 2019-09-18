@@ -10,5 +10,5 @@ lightkurve==1.1.1
 eleanor==0.2.8
 lmfit==0.9.14
 jupyter==1.0.0
-pyfcomb==1.0.4
+pyfcomb==1.0.7
 Sphinx

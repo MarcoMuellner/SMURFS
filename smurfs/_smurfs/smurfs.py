@@ -23,20 +23,6 @@ from smurfs.support.support import cd
 import smurfs.support.mprint as mpr
 from smurfs.support.mprint import *
 
-
-@jit(nopython=True, parallel=True)
-def _jit_spectral_window(f, t):
-    W = []
-    w = np.exp(2 * np.pi * 1j * t)
-
-    for i in f:
-        W.append(np.sum(np.power(w, i)))
-
-    p = np.abs((1 / len(t)) * np.array(W))
-
-    return f, p
-
-
 class Smurfs:
     """
     The *Smurfs* class is the main way to start your frequency analysis. The workflow for a generic problem is the
@@ -308,6 +294,7 @@ class Smurfs:
                 pass
 
         ax : Axes = self.lc.scatter(color='k', ylabel="Flux [mag]",normalize=False, **kwargs)
+        ax.set_ylim(ax.get_ylim()[::-1])
         if len(self._result) > 0:
             params = []
 
@@ -332,7 +319,7 @@ class Smurfs:
         :return:
         """
         if self._ff is None:
-            self.pdg.plot(color='k', **kwargs)
+            self.pdg.plot(color='k',ylabel='Amplitude [mag]', **kwargs)
         else:
             self._ff.plot(show=show, plot_insignificant=plot_insignificant, **kwargs)
 

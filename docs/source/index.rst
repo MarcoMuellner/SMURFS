@@ -14,6 +14,15 @@ Indices and tables
 * :ref:`modindex`
 * :ref:`search`
 
+Examples
+========
+Below you can find some jupyter notebooks, that show
+some examples of how to use SMURFS. You can find those
+notebooks as well in the notebook_examples directory
+of the project.
+
+
+
 API
 ==========
 

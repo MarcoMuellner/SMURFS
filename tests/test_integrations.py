@@ -13,7 +13,7 @@ def testffinder():
     s.plot_pdg(show=True)
     print(s._result)
 
-#@pytest.mark.skip(reason="Temporary Skip")
+@pytest.mark.skip(reason="Temporary Skip")
 def testCreatedSin():
     x = np.linspace(0, 27, num=15000)
     params = [0.6,0.2,0,0.1,6,0,10,5,6]
@@ -21,3 +21,10 @@ def testCreatedSin():
     s = Smurfs(time=x, flux=y, label='test_sin')
     s.run(4,extend_frequencies=5,mode='lmfit')
     pass
+
+def testGammaDoradus():
+    s = Smurfs(target_name='Gamma Doradus')
+    s.run(snr=4,window_size=2,extend_frequencies=3)
+    #_ff.plot(show=True)
+    s.plot_pdg(show=True)
+    print(s._result)

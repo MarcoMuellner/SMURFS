@@ -6,7 +6,7 @@ import matplotlib.pyplot as pl
 from matplotlib.axes import Axes
 from uncertainties.core import AffineScalarFunc
 from lmfit import Model
-from typing import Union, List
+from typing import Union, List, Tuple
 from pandas import DataFrame as df
 import astropy.units as u
 
@@ -15,17 +15,39 @@ from smurfs.support.mprint import *
 
 
 def sin(x: np.ndarray, amp: float, f: float, phase: float) -> np.ndarray:
+    """
+    Sinus function, used for fitting.
+
+    :param x: Time axis
+    :param amp: amplitude
+    :param f: frequency
+    :param phase: phase, normed to 1
+    """
     return amp * np.sin(2. * np.pi * (f * x + phase))
 
 
-def sin_multiple(x: np.ndarray, *params):  # amp_list: List[float], f_list : List[float], phase_list : List[float]):
+def sin_multiple(x: np.ndarray, *params) -> np.ndarray:
+    """
+    Multiple sinii summed up
+
+    :param x: Time axis
+    :param params: Params, see *sin* for signature
+    """
     y = np.zeros(len(x))
     for i in range(0, len(params), 3):
         y += sin(x, params[i], params[i + 1], params[i + 2])
 
     return y
 
-def m_od_uncertainty(lc : LightCurve,a : float):
+
+def m_od_uncertainty(lc: LightCurve, a: float) -> Tuple:
+    """
+    Computes uncertainty for a given light curve according to Montgomery & O'Donoghue (1999).
+
+    :param lc: Lightcurve object
+    :param a: amplitude of the frequency
+    :return: A tuple of uncertainties in this order: Amplitude, frequency, phase
+    """
     # computation of uncertainties with Montgomery & O'Donoghue (1999), used when there are no
     # uncertainties in the flux of the light curve
     N = len(lc.flux)
@@ -34,13 +56,31 @@ def m_od_uncertainty(lc : LightCurve,a : float):
     sigma_f = np.sqrt(6 / N) * (1 / (np.pi * max(lc.time) - min(lc.time))) * sigma_m / a
     sigma_phi = np.sqrt(2 / N) * sigma_m / a
     try:
-        return sigma_amp.value,sigma_f.value,sigma_phi.value
+        return sigma_amp.value, sigma_f.value, sigma_phi.value
     except AttributeError:
         return sigma_amp, sigma_f, sigma_phi
 
 
 class Frequency:
-    def __init__(self, time, flux, window_size, snr, flux_err=None, f_min=None, f_max=None, rm_ranges=None):
+    """
+    The Frequency class represents a single frequency of a given data set. It takes the frequency of maximum
+    power as the guess for pre-whitening. It also computes the Signal to noise ratio of that frequency.
+    After instantiating this class, you can call *pre-whiten*, which tries to fit the frequency to
+    the light curve, and returns the residual between the original light curve and the model of
+    the frequency.
+
+    :param time: Time axis
+    :param flux: Flux axis
+    :param window_size: Window size, used to compute the SNR
+    :param snr: Lower end signal to noise ratio, defines if a frequency is marked as significant
+    :param flux_err: Error in the flux
+    :param f_min: Lower end of the frequency range considered. If None, it uses 0
+    :param f_max: Upper end of the frequency range considered. If None, it uses the Nyquist frequency
+    :param rm_ranges: Ranges of frequencies, that should be ignored
+    """
+
+    def __init__(self, time: np.ndarray, flux: np.ndarray, window_size: float, snr: float, flux_err: np.ndarray = None,
+                 f_min: float = None, f_max: float = None, rm_ranges: List[Tuple[float]] = None):
         if flux_err is None:
             self.lc = LightCurve(time, flux)
         else:
@@ -64,6 +104,7 @@ class Frequency:
         """
         Computes the signal to noise ratio of a given frequency. It considers the area from the first minima before
         the peak until window halfed, as well as the area from the first minima after the peak until window halfed.
+
         :return: Signal to noise ratio of the peak
         """
         self.snr_mask = self.pdg.frequency[self.lower_m] - self.ws / 2 < self.pdg.frequency  # mask lower window
@@ -74,8 +115,10 @@ class Frequency:
 
     def scipy_fit(self):
         """
-        Performs a scipy fit on the light curve of the object. Restricts everything to a sensible range.
-        :return: uncertainty objects of amplitude,frequency, phase (in this order) as well as the param object
+        Performs a scipy fit on the light curve of the object. Limits are 50% up and down from the initial guess.
+        Computes uncertainties using the provided covariance matrix from curve_fit.
+
+        :return: values for amplitude,frequency, phase (in this order) including their uncertainties, as well as the param object
         """
 
         f_guess = self.pdg.frequency_at_max_power.value
@@ -102,9 +145,11 @@ class Frequency:
 
     def lmfit_fit(self):
         """
-        Uses lmfit to perform the sin fit on the light curve.
+        Uses lmfit to perform the sin fit on the light curve. We first fit all three free parameters, and then vary
+        the phase parameter, to get a more accurate value for it. Uncertainties are computed according to
+        Montgomery & O'Donoghue (1999).
 
-        :return:
+        :return: values for amplitude,frequency, phase (in this order) including their uncertainties, as well as the param object
         """
 
         f_guess = self.pdg.frequency_at_max_power.value
@@ -127,13 +172,13 @@ class Frequency:
         a, f, ph = result.values['amp'], result.values['f'], result.values['phase']
 
         if self.flux_error is None or True:
-            sigma_amp,sigma_f,sigma_phi = m_od_uncertainty(self.lc,a)
+            sigma_amp, sigma_f, sigma_phi = m_od_uncertainty(self.lc, a)
             return ufloat(a, sigma_amp), ufloat(f, sigma_f), ufloat(ph, sigma_phi), [a, f, ph]
         else:
             # todo incorporate flux error into fit
             return ufloat(a, 0), ufloat(f, 0), ufloat(ph, 0), [a, f, ph]
 
-    def pre_whiten(self, mode: str = 'scipy') -> LightCurve:
+    def pre_whiten(self, mode: str = 'lmfit') -> LightCurve:
         """
         'Pre whitens' a given light curve. As an estimate, the method always uses the frequency with maximum power.
         It then performs the fit according to the mode parameter, and returns a Lightcurve object with the reduced
@@ -216,6 +261,14 @@ class Frequency:
 
 
 class FFinder:
+    """
+    The FFinder object computes all frequencies according to the input parameters. After instantiating this object,
+    use the *run* method to start the computation of frequencies.
+
+    :param smurfs: *Smurfs* object
+    :param f_min: Lower bound frequency that is considered
+    :param f_max: Upper bound frequency that is considered
+    """
     def __init__(self, smurfs, f_min: float = None, f_max: float = None):
         self.f_min = f_min
         self.f_max = f_max
@@ -234,11 +287,25 @@ class FFinder:
                f"{self.periodogramm.frequency[-1].round(2)}", log)
 
     def run(self, snr: float = 4, window_size: float = 2, skip_similar: bool = False, similar_chancel=True,
-            extend_frequencies: int = 0, improve_fit=True, mode='scipy'):
+            extend_frequencies: int = 0, improve_fit=True, mode='lmfit'):
+        """
+        Starts the frequency extraction from a light curve. In general, it always uses the frequency of maximum power
+        and removes it from the light curve. In general, this process is repeated until we reach a frequency that
+        has a SNR below the lower SNR bound. It is possible to extend this process, by setting the *extend_frequencies*
+        parameter. It then stops after *extend_frequencies* insignificant frequencies are found.
+        If similar_chancel is set, the process also stops after 10 frequencies with a standard deviation of 0.05
+        were found in a row.
 
-        # todo refit all signals
-        # todo return fitted light curve
-        # todo incorporate error
+        :param snr: Lower bound Signal to noise ratio
+        :param window_size: Window size, to compute the SNR
+        :param skip_similar: If this is set and 10 frequencies with a standard deviation of 0.05 were found in a row, that region will be ignored for all further analysis.
+        :param similar_chancel: If this is set and *skip_similar* is **False**, the run chancels after 10 frequencies with a standard deviation of 0.05 were found in a row.
+        :param extend_frequencies: Defines the number of insignificant frequencies, the analysis extends to.
+        :param improve_fit: If this is set, the combination of frequencies are fitted to the data set to improve the parameters
+        :param mode: Fitting mode. Can be either 'lmfit' or 'scipy'
+        :return: Pandas dataframe, consisting of the results for the analysis. Consists of a *Frequency* object, frequency, amplitude, phase, snr, residual noise and a significance flag.
+        """
+        # todo incorporate flux error
 
         mprint("Starting frequency extraction.", info)
         skip_similar_text = ctext('Activated' if skip_similar else 'Deactivated', info if skip_similar else error)
@@ -314,7 +381,15 @@ class FFinder:
         return self.result
 
     def plot(self, ax: Axes = None, show=False, plot_insignificant=False, **kwargs):
-        ax: Axes = self.periodogramm.plot(ax=ax, color='grey', **kwargs)
+        """
+        Plots the periodogram of the data set, including the found frequencies.
+
+        :param ax: Axes object
+        :param show: Show flag, if True, pylab.show is called
+        :param plot_insignificant: If True, insignificant frequencies are shown
+        :param kwargs: kwargs for Periodogram.plot
+        """
+        ax: Axes = self.periodogramm.plot(ax=ax, color='grey',ylabel='Amplitude [mag]', **kwargs)
 
         if plot_insignificant:
             frame = self.result
@@ -335,6 +410,12 @@ class FFinder:
             pl.show()
 
     def _scipy_fit(self, result: List[Frequency]) -> List[Frequency]:
+        """
+        Performs a combination fit for all found frequencies using *scipy.optimize.curve_fit*.
+
+        :param result: List of found frequencies
+        :return: List of improved frequencies
+        """
         arr = []
         boundaries = [[], []]
         for r in result:
@@ -358,6 +439,12 @@ class FFinder:
         return result
 
     def _lmfit_fit(self, result: List[Frequency]):
+        """
+        Performs a combination fit for all found frequencies using *lmfit*.
+
+        :param result: List of found frequencies
+        :return: List of improved frequencies
+        """
         models = []
         for f in result:
             m = Model(sin, prefix=f.label)
@@ -370,7 +457,7 @@ class FFinder:
                              max=1.2 * f.phase.nominal_value)
             models.append(m)
 
-        model : Model= np.sum(models)
+        model: Model = np.sum(models)
         try:
             fit_result = model.fit(self.lc.flux.value, x=self.lc.time)
         except AttributeError:
@@ -378,14 +465,20 @@ class FFinder:
 
         for f in result:
             sigma_amp, sigma_f, sigma_phi = m_od_uncertainty(self.lc, fit_result.values[f.label + 'amp'])
-            f.amp = ufloat(fit_result.values[f.label + 'amp'],sigma_amp)
-            f.f = ufloat(fit_result.values[f.label + 'f'],sigma_f)
-            f.phase = ufloat(fit_result.values[f.label + 'phase'],sigma_phi)
+            f.amp = ufloat(fit_result.values[f.label + 'amp'], sigma_amp)
+            f.f = ufloat(fit_result.values[f.label + 'f'], sigma_f)
+            f.phase = ufloat(fit_result.values[f.label + 'phase'], sigma_phi)
 
         return result
 
-
     def _improve_fit(self, result: List[Frequency], mode='lmfit') -> List[Frequency]:
+        """
+        Performs a combination fit for all found frequencies.
+
+        :param result: List of found frequencies
+        :param mode: Method used, either 'scipy' or 'lmfit'
+        :return:
+        """
         if mode == 'scipy':
             return self._scipy_fit(result)
         elif mode == 'lmfit':
