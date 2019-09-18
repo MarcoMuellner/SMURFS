@@ -1,4 +1,2 @@
-from smurfs.analysis import *
-from smurfs.files import *
-from smurfs.support import *
-from smurfs.timeseries import *
+from smurfs.signal import Periodogram
+from smurfs._smurfs import Smurfs,Frequency,FFinder

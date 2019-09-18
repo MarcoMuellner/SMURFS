@@ -1,13 +1,22 @@
+#!/usr/bin/env python
 import argparse
-from smurfs.analysis import *
-from smurfs._version import __version__
-from smurfs.support.config import UncertaintyMode, conf
+from smurfs._smurfs.smurfs import Smurfs
+from smurfs._smurfs.multi_smurfs import MultiSmurfs
+from smurfs.__version__ import __version__
+import os
+import sys
 
-if __name__ == '__main__':
+def main(args = None):
+    if args is None:
+        args = sys.argv[1:]
+
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("fileName", help="The filename of the lightcurve. Has to be a text file. Please provide "
-                                         "absolute path", type=str)
+    parser.add_argument("target", help="Target for the frequency analysis. Can be either a target, or "
+                                       "a star name. If it is a target, it needs to be an ASCII target. "
+                                       "The first two rows are expected to be time "
+                                       "and flux, the third row is optional and can be used as the flux "
+                                       "error.", type=str)
     parser.add_argument("snr", help="The desired lower bound for the signal to noise ratio for the analysis",
                         type=float)
     parser.add_argument("windowSize", help="The window size used to get the SNR for a given frequency", type=float)
@@ -16,7 +25,59 @@ if __name__ == '__main__':
                              "The application will only check within this parameters if given. "
                              "Per default this parameter is set from 0 to Nyquist frequency."
                              "Please enter it in a form of a tuple (lower,higher).",
-                        type=str, default="0,100")
+                        type=str, default="None,None")
+
+    parser.add_argument("-ssa", "--skipSimilarFrequencies", help="If this parameter is set, the frequencies surrounding"
+                                                                 "one frequency are in a very similar range, that area "
+                                                                 "will be ignored", action='store_true')
+
+    parser.add_argument("-sc", "--skipCutoff",
+                        help="Skips the cutoff check, so similar frequencies don't chancel the run. Be aware that this "
+                             "might lead to unknown behaviour",
+                        action='store_true')
+
+    parser.add_argument("-ef","--extendFrequencies",
+                        help="Extends the frequency analysis by n frequencies, meaning, the analysis will only stop"
+                             "after n insignificant frequencies are found.",type=int,default=0)
+
+    parser.add_argument("-dif","--disableImproveFrequencies",help="Disables the improvement of frequencies after "
+                                                                  "each run (all frequencies are combined and fitted"
+                                                                  "to the data if this flag is not set)",
+                        action='store_false')
+
+    parser.add_argument("-fm", "--fitMethod", help="Using this flag you can either choose 'scipy' "
+                                                   "(scipy.optimize.curve_fit) or 'lmfit' (lmfti Model fit). "
+                                                   "'lmfit' is activated by default",
+                        type=str, choices=["scipy", "lmfit"], default="lmfit")
+
+    parser.add_argument("-ft","--fluxType", help="If you input SC Tess observations (TIC IDs), this flag "
+                                                 "allows you to choose between PDCSAP and SAP flux. Default "
+                                                 "is PDCSAP",
+                        type=str,choices=["PDCSAP","SAP"],default="PDCSAP")
+
+    parser.add_argument("-so","--storeObject",help="If this flag is set, the SMURFS object is stored in the "
+                                                   "results. You can later use this object to load the "
+                                                   "_result into a python file using 'Smurfs.from_path'."
+                        ,action='store_true')
+
+    parser.add_argument("-sp","--savePath",help="Allows you to set the save path of the analysis. By "
+                                                "default it will save it in the same folder, where "
+                                                "the module was called.",type=str,default=".")
+
+
+    """
+    #todo replace this
+    parser.add_argument("-om", "--outputMode", help="Optional parameter that defines what will be exported as dataset. "
+                                                    "There are two possibilities: Normal and Full. Normal mode means, that"
+                                                    "only the first and last amplitudespectra will be plotted & exported, "
+                                                    "full means all amplitudespectra will be plotted & exported. Default is "
+                                                    "Normal.",
+    
+                        type=str, choices=["Normal", "Full"], default="Normal")
+                        
+    parser.add_argument("-igr", "--ignoreCutoffRatio", help="Optional parameter. If this is set to True, it will ignore"
+                                                            "the gap ratio cutoff criterion", action='store_true')  
+                                                            
     parser.add_argument("-trs", "--timeBaseSplit",
                         help="Optional parameter that describes the split within the time range."
                              "This can be used to get multiple amplitude spectra for the "
@@ -30,58 +91,47 @@ if __name__ == '__main__':
                              "work, if -trs is set to a reasonable parameter. For example, if the trs is "
                              "set to 50 and the overlap to 2, the chunks would contain the ranges (0,50),"
                              "(48,98),(96,146) ... Defaults to 0, which means no overlap will take place",
-                        type=int, default=0)
-    parser.add_argument("-om", "--outputMode", help="Optional parameter that defines what will be exported as dataset. "
-                                                    "There are two possibilities: Normal and Full. Normal mode means, that"
-                                                    "only the first and last amplitudespectra will be plotted & exported, "
-                                                    "full means all amplitudespectra will be plotted & exported. Default is "
-                                                    "Normal.",
-                        type=str, choices=["Normal", "Full"], default="Normal")
-    parser.add_argument("-fm", "--frequencyMarker",
-                        help="Optional parameter, that can be passed if frequencies should be "
-                             "marked in the dynamic fourier spektrum. Frequencies will be plotted "
-                             "on top of the plot. Please use a relative path to the call path "
-                             "you are currently in",
-                        type=str, default="")
+                        type=int, default=0)                                                                                  
+    """
     parser.add_argument("--version", help="Shows version of SMURFS", action='version',
                         version='SMURFS {version}'.format(version=__version__))
 
-    parser.add_argument("-igr", "--ignoreCutoffRatio", help="Optional parameter. If this is set to True, it will ignore"
-                                                            "the gap ratio cutoff criterion", action='store_true')
 
-    parser.add_argument("-ssa", "--skipSimilarFrequencies", help="If this parameter is set, the frequencies surrounding"
-                                                                 "one frequency are in a very similar range, that area "
-                                                                 "will be ignored", action='store_true')
 
-    parser.add_argument("-um", "--uncertaintyMode", help="Optional parameter. Set this parameter to choose the "
-                                                         "error determination. Either Montgomery & O'Donoghue (1999),"
-                                                         "least square errors (fits) or none", type=str
-                        , choices=UncertaintyMode.content(), default=UncertaintyMode.fit.value)
+    args = parser.parse_args(args)
 
-    parser.add_argument("-sc", "--skipCutoff",
-                        help="Skips the cutoff check, so similar frequencies don't chancel the run. Be aware that this "
-                             "might lead to unknown behaviour",
-                        action='store_true')
-
-    args = parser.parse_args()
-
-    if "," in args.fileName:
-        files = args.fileName.split(",")
+    if "," in args.target:
+        targets = args.target.split(",")
     else:
-        files = [args.fileName]
+        targets = [args.target]
 
-    for file in files:
-        conf().uncertaintiesMode = args.uncertaintyMode
-        conf().skipSimilarFrequencies = args.skipSimilarFrequencies
-        conf().skipCutoff = args.skipCutoff
+    if len(targets) == 1:
+        target = targets[0]
 
-        fData = args.frequencyRange.split(",")
-        frequencyRange = (float(fData[0]), float(fData[1]))
+        f_min = None if args.frequencyRange.split(",")[0] else float(args.frequencyRange.split(",")[0])
+        f_max = None if args.frequencyRange.split(",")[1] else float(args.frequencyRange.split(",")[1])
 
-        run(file, args.snr, windowSize=args.windowSize
-            , frequencyRange=frequencyRange
-            , timeRange=args.timeBaseSplit
-            , overlap=args.overlap
-            , outputMode=args.outputMode
-            , frequencyMarker=args.frequencyMarker
-            , ignoreCutoffRatio=args.ignoreCutoffRatio)
+        if len(target.split(".")) == 2 and os.path.basename(target).split(".")[1] in ['txt','dat']:
+            s = Smurfs(file=target)
+        else:
+            s = Smurfs(target_name=target,flux=args.fluxType)
+
+        s.run(snr=args.snr,window_size=args.windowSize,f_min=f_min,f_max=f_max,
+              skip_similar=args.skipSimilarFrequencies,similar_chancel=not args.skipCutoff
+              ,extend_frequencies=args.extendFrequencies,improve_fit=args.disableImproveFrequencies
+              ,mode=args.fitMethod)
+        s.save(args.savePath,args.storeObject)
+    else:
+        if len(targets[0].split(".")) == 2 and os.path.basename(targets[0]).split(".")[1] in ['txt','dat']:
+            s = MultiSmurfs(file_list=targets)
+        else:
+            s = MultiSmurfs(target_list=targets,flux_types=args.fluxType)
+
+        s.run(snr=args.snr,window_size=args.windowSize,f_min=f_min,f_max=f_max,
+              skip_similar=args.skipSimilarFrequencies,similar_chancel=not args.skipCutoff
+              ,extend_frequencies=args.extendFrequencies,improve_fit=args.disableImproveFrequencies
+              ,mode=args.fitMethod)
+        s.save(args.savePath, args.storeObject)
+
+if __name__ == "__main__":
+    main()

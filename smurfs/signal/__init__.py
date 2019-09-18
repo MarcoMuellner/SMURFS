@@ -1,0 +1,1 @@
+from smurfs.signal.periodogram import Periodogram
