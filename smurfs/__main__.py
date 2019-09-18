@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import argparse
 from smurfs._smurfs.smurfs import Smurfs
+from smurfs._smurfs.multi_smurfs import MultiSmurfs
 from smurfs.__version__ import __version__
 import os
 import sys
@@ -25,20 +26,6 @@ def main(args = None):
                              "Per default this parameter is set from 0 to Nyquist frequency."
                              "Please enter it in a form of a tuple (lower,higher).",
                         type=str, default="None,None")
-    parser.add_argument("-trs", "--timeBaseSplit",
-                        help="Optional parameter that describes the split within the time range."
-                             "This can be used to get multiple amplitude spectra for the "
-                             "lightcurve, split up within the time Range. A parameter could be "
-                             "for example 50, where the parameter would split the lightcurve in"
-                             "50 day chunks (last segment will be smaller/equal). Defaults"
-                             "to -1, which means no splitting will occur",
-                        type=int, default=-1)
-    parser.add_argument("-o", "--overlap",
-                        help="Optional parameter that describes the overlap of two split ranges. Will only"
-                             "work, if -trs is set to a reasonable parameter. For example, if the trs is "
-                             "set to 50 and the overlap to 2, the chunks would contain the ranges (0,50),"
-                             "(48,98),(96,146) ... Defaults to 0, which means no overlap will take place",
-                        type=int, default=0)
 
     parser.add_argument("-ssa", "--skipSimilarFrequencies", help="If this parameter is set, the frequencies surrounding"
                                                                  "one frequency are in a very similar range, that area "
@@ -87,12 +74,29 @@ def main(args = None):
                                                     "Normal.",
     
                         type=str, choices=["Normal", "Full"], default="Normal")
+                        
+    parser.add_argument("-igr", "--ignoreCutoffRatio", help="Optional parameter. If this is set to True, it will ignore"
+                                                            "the gap ratio cutoff criterion", action='store_true')  
+                                                            
+    parser.add_argument("-trs", "--timeBaseSplit",
+                        help="Optional parameter that describes the split within the time range."
+                             "This can be used to get multiple amplitude spectra for the "
+                             "lightcurve, split up within the time Range. A parameter could be "
+                             "for example 50, where the parameter would split the lightcurve in"
+                             "50 day chunks (last segment will be smaller/equal). Defaults"
+                             "to -1, which means no splitting will occur",
+                        type=int, default=-1)
+    parser.add_argument("-o", "--overlap",
+                        help="Optional parameter that describes the overlap of two split ranges. Will only"
+                             "work, if -trs is set to a reasonable parameter. For example, if the trs is "
+                             "set to 50 and the overlap to 2, the chunks would contain the ranges (0,50),"
+                             "(48,98),(96,146) ... Defaults to 0, which means no overlap will take place",
+                        type=int, default=0)                                                                                  
     """
     parser.add_argument("--version", help="Shows version of SMURFS", action='version',
                         version='SMURFS {version}'.format(version=__version__))
 
-    parser.add_argument("-igr", "--ignoreCutoffRatio", help="Optional parameter. If this is set to True, it will ignore"
-                                                            "the gap ratio cutoff criterion", action='store_true')
+
 
     args = parser.parse_args(args)
 
@@ -118,8 +122,16 @@ def main(args = None):
               ,mode=args.fitMethod)
         s.save(args.savePath,args.storeObject)
     else:
-        #todo mpi stuff
-        pass
+        if len(targets[0].split(".")) == 2 and os.path.basename(targets[0]).split(".")[1] in ['txt','dat']:
+            s = MultiSmurfs(file_list=targets)
+        else:
+            s = MultiSmurfs(target_list=targets,flux_types=args.fluxType)
+
+        s.run(snr=args.snr,window_size=args.windowSize,f_min=f_min,f_max=f_max,
+              skip_similar=args.skipSimilarFrequencies,similar_chancel=not args.skipCutoff
+              ,extend_frequencies=args.extendFrequencies,improve_fit=args.disableImproveFrequencies
+              ,mode=args.fitMethod)
+        s.save(args.savePath, args.storeObject)
 
 if __name__ == "__main__":
     main()

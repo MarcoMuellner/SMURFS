@@ -68,7 +68,7 @@ class Smurfs:
             if label is None:
                 self.label = target_name
             else:
-                self.label = label
+                self.label = label            
         elif time is None and flux is None and file is None:
             raise AttributeError(
                 ctext("You need to either pass a target path or time and flux of the lightcurve object", error))

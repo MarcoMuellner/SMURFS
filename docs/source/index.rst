@@ -11,7 +11,7 @@ scipy (https://www.scipy.org/) and astropy (http://www.astropy.org/).
 Prerequisits
 ------------
 
-It is assumed that *git*,*python3* and *pip* are installed. If not, follow the installation instructions for
+It is assumed that *git* , *python3* and *pip* are installed. If not, follow the installation instructions for
 git (https://git-scm.com/), python (https://www.python.org/) and pip (https://pip.pypa.io/en/stable/installing/).
 
 Installation
@@ -42,4 +42,5 @@ embedded in external Python code. Below you can find both approaches.
    :maxdepth: 3
 
    example
+   terminal
    api

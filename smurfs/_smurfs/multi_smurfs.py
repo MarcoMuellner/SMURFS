@@ -76,8 +76,10 @@ class MultiSmurfs:
             for s,param in zip(self.s_list,param_list):
                 p.starmap(s,param)
 
-    def save(self):
-        pass
+    def save(self,save_path : str, store_obj = False):
+        for s in self.s_list:
+            s.save(save_path,store_obj)
+
 
 
 
