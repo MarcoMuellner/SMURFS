@@ -8,7 +8,7 @@ with open("requirements.txt", "r") as fh:
 
 setuptools.setup(
     name="smurfs",
-    version="0.6.0-dev",
+    version="1.0.0",
     author="Marco Müllner",
     author_email="muellnermarco@gmail.com",
     description="Smart UseR Frequency analySer, a fast and easy to use frequency analyser.",
