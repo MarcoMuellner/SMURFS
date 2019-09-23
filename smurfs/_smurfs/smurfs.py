@@ -307,7 +307,9 @@ class Smurfs:
         if len(self._result) > 0:
             params = []
 
-            for i, j, k in zip(self._result.amp, self._result.frequency, self._result.phase):
+            for i, j, k in zip(self._result[self._result.significant==True].amp
+                    , self._result[self._result.significant==True].frequency
+                    , self._result[self._result.significant==True].phase):
                 params.append(i.nominal_value)
                 params.append(j.nominal_value)
                 params.append(k.nominal_value)
