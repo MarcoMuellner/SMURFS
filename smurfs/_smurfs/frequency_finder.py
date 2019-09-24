@@ -54,7 +54,7 @@ def m_od_uncertainty(lc: LightCurve, a: float) -> Tuple:
     sigma_m = np.std(lc.flux)
     sigma_amp = np.sqrt(2 / N) * sigma_m
     sigma_f = np.sqrt(6 / N) * (1 / (np.pi * max(lc.time) - min(lc.time))) * sigma_m / a
-    sigma_phi = np.sqrt(2 / N) * sigma_m / a /(2*np.pi)
+    sigma_phi = np.sqrt(2 / N) * sigma_m / (a * (2*np.pi))
     try:
         return sigma_amp.value, sigma_f.value, sigma_phi.value
     except AttributeError:

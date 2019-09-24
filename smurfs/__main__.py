@@ -3,7 +3,10 @@ import argparse
 from smurfs._smurfs.smurfs import Smurfs
 from smurfs._smurfs.multi_smurfs import MultiSmurfs
 from smurfs.__version__ import __version__
+from smurfs.support.mprint import *
 import os
+import pickle
+import subprocess
 import sys
 
 def main(args = None):
@@ -64,6 +67,12 @@ def main(args = None):
                                                 "default it will save it in the same folder, where "
                                                 "the module was called.",type=str,default=".")
 
+    parser.add_argument("-i", "--interactive", help="Using this flag will automatically start an iPython shell. "
+                                                    "This allows for direct interaction with the result using the "
+                                                    "'star' object."
+                        , action='store_true')
+
+
 
     """
     #todo replace this
@@ -121,11 +130,21 @@ def main(args = None):
               ,extend_frequencies=args.extendFrequencies,improve_fit=args.disableImproveFrequencies
               ,mode=args.fitMethod)
         s.save(args.savePath,args.storeObject)
+        if args.interactive:
+            mprint("Starting interactive shell. Use the 'star' object to interact with the result!",state)
+            pickle.dump(s, open("i_obj.smurfs", "wb"))
+            cmd = ["ipython","-i","-c","import pickle;star = pickle.load(open('i_obj.smurfs', 'rb'));import os;os.remove('i_obj.smurfs')"]
+            subprocess.call(cmd)
+            mprint("Done", info)
     else:
         if len(targets[0].split(".")) == 2 and os.path.basename(targets[0]).split(".")[1] in ['txt','dat']:
             s = MultiSmurfs(file_list=targets)
         else:
             s = MultiSmurfs(target_list=targets,flux_types=args.fluxType)
+
+        f_min = None if args.frequencyRange.split(",")[0] else float(args.frequencyRange.split(",")[0])
+        f_max = None if args.frequencyRange.split(",")[1] else float(args.frequencyRange.split(",")[1])
+
 
         s.run(snr=args.snr,window_size=args.windowSize,f_min=f_min,f_max=f_max,
               skip_similar=args.skipSimilarFrequencies,similar_chancel=not args.skipCutoff

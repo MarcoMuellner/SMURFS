@@ -54,6 +54,9 @@ class Periodogram:
             #todo warning here!
             pass
 
+        if f_min is None:
+            f_min = 0
+
         if f_max is None:
             f_max = nyquist
 

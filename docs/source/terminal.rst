@@ -91,6 +91,11 @@ Parameters
         smurfs -sp ../
     - Chooses the path where the results are saved
 
+**Interactive mode**
+    - .. code-block:: guess
+
+        smurfs -i
+    - Starts an iPython shell after the analysis is complete. You can then interact with the object
 
 
 

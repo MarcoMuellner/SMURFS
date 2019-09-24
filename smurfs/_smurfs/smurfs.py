@@ -14,6 +14,7 @@ import pickle
 from pyfcomb import get_combinations
 from uncertainties import unumpy as unp
 from matplotlib.axes import Axes
+import subprocess
 
 from smurfs.preprocess.tess import download_lc
 from smurfs.preprocess.file import load_file
@@ -281,13 +282,14 @@ class Smurfs:
         self._result = self._ff.run(snr=snr, window_size=window_size, skip_similar=skip_similar,
                                     similar_chancel=similar_chancel
                                     , extend_frequencies=extend_frequencies, improve_fit=improve_fit, mode=mode)
-        self._combinations = get_combinations(self._result[self._result.significant == True].index.tolist(),
+        self._combinations = get_combinations((self._result[self._result.significant == True].index+1).tolist(),
                                               unp.nominal_values(
                                                   self._result[self._result.significant == True].frequency.tolist())
                                               , unp.nominal_values(
                 self._result[self._result.significant == True].amp.tolist()))
 
         print(f'\x1b[7;32;40m {self.label} Analysis done! \x1b[0m')
+
 
     def plot_lc(self, show=False, **kwargs):
         """
