@@ -14,7 +14,7 @@ import pickle
 from pyfcomb import get_combinations
 from uncertainties import unumpy as unp
 from matplotlib.axes import Axes
-import subprocess
+from matplotlib.figure import Figure
 
 from smurfs.preprocess.tess import download_lc
 from smurfs.preprocess.file import load_file
@@ -64,8 +64,9 @@ class Smurfs:
     def __init__(self, file=None, time=None, flux=None, target_name=None, flux_type='PDCSAP', label=None,
                  quiet_flag=False):
         mpr.quiet = quiet_flag
+        self.validation_page : Figure= None
         if target_name is not None:
-            self.lc: TessLightCurve = download_lc(target_name, flux_type)
+            self.lc, self.validation_page = download_lc(target_name, flux_type)
             if label is None:
                 self.label = target_name
             else:
@@ -73,6 +74,7 @@ class Smurfs:
         elif time is None and flux is None and file is None:
             raise AttributeError(
                 ctext("You need to either pass a target path or time and flux of the lightcurve object", error))
+
         elif time is not None and flux is not None:
             mprint("Creating light curve object from time and flux input.", log)
             self.lc: LightCurve = LightCurve(time=time, flux=flux)
@@ -80,6 +82,10 @@ class Smurfs:
                 self.label = 'LC'
             else:
                 self.label = label
+
+            if not 0.1 > np.mean(flux) > -0.1:
+                mprint("Be aware that the mean of the flux is not 0! This might lead to unintended consequences!",warn)
+
         elif file is not None:
             self.lc: LightCurve = load_file(file)
             if label is None:
@@ -290,6 +296,20 @@ class Smurfs:
 
         print(f'\x1b[7;32;40m {self.label} Analysis done! \x1b[0m')
 
+    def improve_result(self):
+        """
+        Fits the combined found frequencies to the original light curve, hence improving the fit of the total model.
+        """
+        if self._ff is None:
+            raise AttributeError("You need to run the analysis before you can improve the fit.")
+
+        self._result = self._ff.improve_result()
+        self._combinations = get_combinations((self._result[self._result.significant == True].index + 1).tolist(),
+                                              unp.nominal_values(
+                                                  self._result[self._result.significant == True].frequency.tolist())
+                                              , unp.nominal_values(
+                self._result[self._result.significant == True].amp.tolist()))
+
 
     def plot_lc(self, show=False, **kwargs):
         """
@@ -318,6 +338,7 @@ class Smurfs:
 
             y = sin_multiple(self.lc.time, *params)
             ax.plot(self.lc.time, y, color='red', linewidth=1)
+
         if show:
             pl.show()
 
@@ -407,6 +428,10 @@ class Smurfs:
                     pl.tight_layout()
                     fig.savefig(name)
                     pl.close()
+
+                if self.validation_page is not None:
+                    self.validation_page.savefig("Validation_page.pdf")
+                    pl.close(self.validation_page)
         print(f'\x1b[7;32;40m {self.label} Data saved! \x1b[0m')
 
     @staticmethod

@@ -54,7 +54,7 @@ def m_od_uncertainty(lc: LightCurve, a: float) -> Tuple:
     sigma_m = np.std(lc.flux)
     sigma_amp = np.sqrt(2 / N) * sigma_m
     sigma_f = np.sqrt(6 / N) * (1 / (np.pi * max(lc.time) - min(lc.time))) * sigma_m / a
-    sigma_phi = np.sqrt(2 / N) * sigma_m / (a * (2*np.pi))
+    sigma_phi = np.sqrt(2 / N) * sigma_m / (a * (2 * np.pi))
     try:
         return sigma_amp.value, sigma_f.value, sigma_phi.value
     except AttributeError:
@@ -269,6 +269,7 @@ class FFinder:
     :param f_min: Lower bound frequency that is considered
     :param f_max: Upper bound frequency that is considered
     """
+
     def __init__(self, smurfs, f_min: float = None, f_max: float = None):
         self.f_min = f_min
         self.f_max = f_max
@@ -356,7 +357,8 @@ class FFinder:
                 noise_list.append(res_noise)
 
                 if improve_fit:
-                    self._improve_fit(result, mode=mode)
+                    result = self._improve_fit(result, mode=mode)
+                    lc = self._res_lc_from_model(result)
 
                 # check for similarity of last 10 frequencies
                 if len(result) > 10:
@@ -392,12 +394,15 @@ class FFinder:
         :param plot_insignificant: If True, insignificant frequencies are shown
         :param kwargs: kwargs for Periodogram.plot
         """
-        ax: Axes = self.periodogramm.plot(ax=ax, color='grey',ylabel='Amplitude [mag]', **kwargs)
+        ax: Axes = self.periodogramm.plot(ax=ax, color='grey', ylabel='Amplitude [mag]', **kwargs)
 
         if plot_insignificant:
             frame = self.result
         else:
             frame: df = self.result[self.result.significant == True].reset_index(drop=True)
+
+        if len(frame) > 0:
+            ax.set_xlim(np.amin(frame.frequency).nominal_value * 0.8, np.amax(frame.frequency).nominal_value * 1.2)
 
         for i in frame.iterrows():
             f = i[1].f_obj.f.nominal_value
@@ -488,3 +493,38 @@ class FFinder:
             return self._lmfit_fit(result)
         else:
             raise ValueError(f"Fitting mode '{mode}' not available.")
+
+    def _res_lc_from_model(self, result: List[Frequency]) -> LightCurve:
+        """
+        Removes the model from the original light curve, giving the residual
+        :param result: List of Frequency objects
+        :return: Residual LightCurve
+        """
+        params = []
+
+        for f in result:
+            if not f.significant:
+                continue
+
+            params.append(f.amp.nominal_value)
+            params.append(f.f.nominal_value)
+            params.append(f.phase.nominal_value)
+
+        return LightCurve(self.lc.time, self.lc.flux - sin_multiple(self.lc.time, *params))
+
+    def improve_result(self):
+        """
+
+        :return:
+        """
+        if len(self.result) == 0:
+            return self.result
+
+        f_list = self.result.f_obj.tolist()
+        f_list = self._improve_fit(f_list)
+        self.res_lc = self._res_lc_from_model(f_list)
+        self.res_pdg = Periodogram.from_lightcurve(self.res_lc, self.f_min, self.f_max)
+        self.result = df(
+            [[i, i.f, i.amp, i.phase, i.snr, j, i.significant] for i, j in zip(f_list, self.result.res_noise.tolist())]
+            , columns=self.columns)
+        return self.result

@@ -43,10 +43,11 @@ def main(args = None):
                         help="Extends the frequency analysis by n frequencies, meaning, the analysis will only stop"
                              "after n insignificant frequencies are found.",type=int,default=0)
 
-    parser.add_argument("-dif","--disableImproveFrequencies",help="Disables the improvement of frequencies after "
-                                                                  "each run (all frequencies are combined and fitted"
-                                                                  "to the data if this flag is not set)",
-                        action='store_false')
+    parser.add_argument("-imf","--improveFitMode",help="Three different fit improvement modes are available:\n1)'all' "
+                                                       "-> improve fit after every frequency\n2)'end' -> improve "
+                                                       "fit after last significant frequency was found.\n3) 'none' -> "
+                                                       "Disables improve fit.",type=str,choices=['all','end','none'],
+                        default='all')
 
     parser.add_argument("-fm", "--fitMethod", help="Using this flag you can either choose 'scipy' "
                                                    "(scipy.optimize.curve_fit) or 'lmfit' (lmfti Model fit). "
@@ -125,15 +126,24 @@ def main(args = None):
         else:
             s = Smurfs(target_name=target,flux=args.fluxType)
 
+        improve_fit = args.improveFitMode == 'all'
+
         s.run(snr=args.snr,window_size=args.windowSize,f_min=f_min,f_max=f_max,
               skip_similar=args.skipSimilarFrequencies,similar_chancel=not args.skipCutoff
-              ,extend_frequencies=args.extendFrequencies,improve_fit=args.disableImproveFrequencies
+              ,extend_frequencies=args.extendFrequencies,improve_fit=improve_fit
               ,mode=args.fitMethod)
+
+        if args.improveFitMode == 'end':
+            mprint("Improving fit ...", state)
+            s.improve_result()
+
         s.save(args.savePath,args.storeObject)
+
+        #start interactive shell, by loading smurfs object directly into the shell
         if args.interactive:
             mprint("Starting interactive shell. Use the 'star' object to interact with the result!",state)
             pickle.dump(s, open("i_obj.smurfs", "wb"))
-            cmd = ["ipython","-i","-c","import pickle;star = pickle.load(open('i_obj.smurfs', 'rb'));import os;os.remove('i_obj.smurfs')"]
+            cmd = ["ipython","-i","-c","from smurfs import Smurfs;import pickle;star : Smurfs = pickle.load(open('i_obj.smurfs', 'rb'));import os;os.remove('i_obj.smurfs');import matplotlib.pyplot as pl;pl.ion()"]
             subprocess.call(cmd)
             mprint("Done", info)
     else:
@@ -144,7 +154,6 @@ def main(args = None):
 
         f_min = None if args.frequencyRange.split(",")[0] else float(args.frequencyRange.split(",")[0])
         f_max = None if args.frequencyRange.split(",")[1] else float(args.frequencyRange.split(",")[1])
-
 
         s.run(snr=args.snr,window_size=args.windowSize,f_min=f_min,f_max=f_max,
               skip_similar=args.skipSimilarFrequencies,similar_chancel=not args.skipCutoff
