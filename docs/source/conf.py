@@ -12,7 +12,6 @@
 #
 import os
 import sys
-import sphinx_ustack_theme
 from recommonmark.transform import AutoStructify
 sys.path.insert(0, os.path.abspath(os.path.join("..","..")))
 sys.setrecursionlimit(1500)
