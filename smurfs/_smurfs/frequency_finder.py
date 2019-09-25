@@ -358,7 +358,7 @@ class FFinder:
 
                 if improve_fit:
                     result = self._improve_fit(result, mode=mode)
-                    lc = self._res_lc_from_model(result)
+                    lc = self._res_lc_from_model(result,True)
 
                 # check for similarity of last 10 frequencies
                 if len(result) > 10:
@@ -494,7 +494,7 @@ class FFinder:
         else:
             raise ValueError(f"Fitting mode '{mode}' not available.")
 
-    def _res_lc_from_model(self, result: List[Frequency]) -> LightCurve:
+    def _res_lc_from_model(self, result: List[Frequency],use_insignificant = False) -> LightCurve:
         """
         Removes the model from the original light curve, giving the residual
         :param result: List of Frequency objects
@@ -503,7 +503,7 @@ class FFinder:
         params = []
 
         for f in result:
-            if not f.significant:
+            if not f.significant and not use_insignificant:
                 continue
 
             params.append(f.amp.nominal_value)
@@ -514,8 +514,7 @@ class FFinder:
 
     def improve_result(self):
         """
-
-        :return:
+        Improves the result by fitting the combined result to the original light curve
         """
         if len(self.result) == 0:
             return self.result

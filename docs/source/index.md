@@ -1,4 +1,4 @@
-# SMURFS
+# Smurfs Documentation
 ![SMURFS Image](https://i.imgur.com/wWe1q0y.png)
 
 The **SMURFS** (**SM**art **U**se**R** **F**requency analy**S**er) provides automatic extraction of frequencies from
@@ -73,15 +73,11 @@ result and ```_result.csv``` gives the result for a given run.
  
 ## Documentation
 
-Full documenation is available [here](https://smurfs.readthedocs.io/en/master/)
-
-## Features
-
-SMURFS provides various nice to have features, setting it apart
-from common frequency analysers. These include
-
-* Python only. No more Fortran, IDL or other more obfuscating languages 
-* Fast runs due to the usage of optimized libraries, including numpy, scipy and astropy,
-dedicated to scientific work
-* Generates a full result set that can be used for further analysis, including 
-spectra of the first and last frequency, spectrograms, machine readable results and so on.
+```eval_rst
+.. toctree::
+   :maxdepth: 3
+    
+   example
+   terminal
+   api
+```

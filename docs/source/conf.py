@@ -12,6 +12,8 @@
 #
 import os
 import sys
+import sphinx_ustack_theme
+from recommonmark.transform import AutoStructify
 sys.path.insert(0, os.path.abspath(os.path.join("..","..")))
 sys.setrecursionlimit(1500)
 
@@ -35,7 +37,7 @@ extensions = [
     'sphinx.ext.viewcode',
     'sphinx.ext.autodoc',
     'sphinx.ext.intersphinx',
-    'nbsphinx'
+    'recommonmark'
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -52,7 +54,7 @@ exclude_patterns = []
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'alabaster'
+html_theme = 'sphinx_rtd_theme'
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
@@ -65,4 +67,27 @@ add_module_names = False
 
 # The master toctree document.
 master_doc = 'index'
+
+#which file should be handled how
+source_suffix = {
+    '.rst': 'restructuredtext',
+    '.txt': 'markdown',
+    '.md': 'markdown',
+}
+
+github_doc_root = 'https://github.com/MarcoMuellner/SMURFS/tree/master/docs'
+
+def setup(app):
+    app.add_config_value('recommonmark_config', {
+        #'url_resolver': lambda url: github_doc_root + url,
+        'auto_toc_tree_section': 'Contents',
+        'enable_math': True,
+        'enable_inline_math': True,
+        'enable_eval_rst': True,
+        'enable_auto_doc_ref': True,
+    }, True)
+    app.add_transform(AutoStructify)
+
+
+
 

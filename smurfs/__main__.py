@@ -115,11 +115,11 @@ def main(args = None):
     else:
         targets = [args.target]
 
+    f_min = None if args.frequencyRange.split(",")[0] == 'None' else float(args.frequencyRange.split(",")[0])
+    f_max = None if args.frequencyRange.split(",")[1] == 'None' else float(args.frequencyRange.split(",")[1])
+
     if len(targets) == 1:
         target = targets[0]
-
-        f_min = None if args.frequencyRange.split(",")[0] else float(args.frequencyRange.split(",")[0])
-        f_max = None if args.frequencyRange.split(",")[1] else float(args.frequencyRange.split(",")[1])
 
         if len(target.split(".")) == 2 and os.path.basename(target).split(".")[1] in ['txt','dat']:
             s = Smurfs(file=target)
@@ -151,9 +151,6 @@ def main(args = None):
             s = MultiSmurfs(file_list=targets)
         else:
             s = MultiSmurfs(target_list=targets,flux_types=args.fluxType)
-
-        f_min = None if args.frequencyRange.split(",")[0] else float(args.frequencyRange.split(",")[0])
-        f_max = None if args.frequencyRange.split(",")[1] else float(args.frequencyRange.split(",")[1])
 
         s.run(snr=args.snr,window_size=args.windowSize,f_min=f_min,f_max=f_max,
               skip_similar=args.skipSimilarFrequencies,similar_chancel=not args.skipCutoff

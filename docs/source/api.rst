@@ -17,3 +17,8 @@ Frequency
 ---------
 .. autoclass:: smurfs._smurfs.frequency_finder.Frequency
    :members:
+
+Periodogram
+-----------
+.. autoclass:: smurfs.signal.periodogram.Periodogram
+   :members:

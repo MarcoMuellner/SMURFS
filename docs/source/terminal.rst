@@ -1,5 +1,5 @@
-Standalone usage
-================
+SMURFS as a command line tool
+=============================
 
 When installing Smurfs, it automatically installs a standalone version of this
 code, which you can then call from the terminal. The usage is similar to what

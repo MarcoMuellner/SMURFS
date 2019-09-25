@@ -216,7 +216,7 @@ class Smurfs:
         return (1 - np.sum(diff[mask]) / np.sum(diff))
 
     @property
-    def periodogramm(self):
+    def periodogram(self):
         """
         Returns a *Periodogram* object of the light curve.
         """
@@ -294,6 +294,8 @@ class Smurfs:
                                               , unp.nominal_values(
                 self._result[self._result.significant == True].amp.tolist()))
 
+        self.res_lc = self._ff.res_lc
+
         print(f'\x1b[7;32;40m {self.label} Analysis done! \x1b[0m')
 
     def improve_result(self):
@@ -309,6 +311,7 @@ class Smurfs:
                                                   self._result[self._result.significant == True].frequency.tolist())
                                               , unp.nominal_values(
                 self._result[self._result.significant == True].amp.tolist()))
+        self.res_lc = self._ff.res_lc
 
 
     def plot_lc(self, show=False, **kwargs):
@@ -367,7 +370,7 @@ class Smurfs:
         if not os.path.exists(path):
             raise IOError(ctext(f"'{path}' does not exist!", error))
 
-        mprint("Saving results, this may take a bit ...", warn)
+        mprint("Saving results, this may take a bit ...", log)
 
         proj_path = os.path.join(path, self.label.replace(" ","_"))
         index = 1
@@ -397,7 +400,7 @@ class Smurfs:
                             fr.to_csv(f)
                             f.write("\n\n")
 
-                    self._combinations.to_csv('_combinations.csv')
+                    self._combinations.to_csv('_    combinations.csv')
 
                 self.lc.to_csv("LC.txt")
                 self.pdg.to_csv("PS.txt")
@@ -451,6 +454,6 @@ class Smurfs:
                     load_file = os.path.join(r, file)
 
         if load_file is None:
-            raise IOError(ctext(f"Can't find any .smurfs file in {path}!"), error)
+            raise IOError(ctext(f"Can't find any .smurfs file in {path}!", error))
 
         return pickle.load(open(load_file, 'rb'))

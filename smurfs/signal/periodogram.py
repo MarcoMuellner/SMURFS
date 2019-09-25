@@ -3,37 +3,42 @@ from lightkurve import Periodogram as lk_Periodogram,LightCurve
 from astropy.stats import LombScargle
 from astropy.units import cds
 from pandas import DataFrame as df
+from typing import List,Tuple
 
 
-class Periodogram:
+class Periodogram(lk_Periodogram):
+    """
+    Custom Periodogram class, fit to the needs of smurfs. Mirrors the behaviour of the Lightkurve Periodogram class,
+    and is derived from it. See
+    https://docs.lightkurve.org/api/lightkurve.periodogram.Periodogram.html#lightkurve.periodogram.Periodogram for
+    documentation on the constructor parameters.
+
+    This class differs from the Lightkurve Periodogram class through two aspects:
+    1) It adds a different static method, that converts a Lightcurve object into a periodogram.
+    2) The plotting and saving of data has been adapted to fit the needs of smurfs
+    """
     def __init__(self, frequency: np.ndarray, power: np.ndarray, nyquist: float = None, targetid=None,
                  default_view='frequency', meta={}):
-        """
-        Custom Periodogramm class. Mirrors the behaviour of lightkurve.periodogramm. See lightkurve docs
-        for info
-        """
         self.nyquist = nyquist
-        self.pdg = lk_Periodogram(frequency,power,nyquist=nyquist,targetid=targetid,default_view=default_view,meta=meta)
-
-    @property
-    def max_power(self):
-        return self.pdg.max_power
-
-    @property
-    def frequency_at_max_power(self):
-        return self.pdg.frequency_at_max_power
-
-    @property
-    def frequency(self):
-        return self.pdg.frequency
-
-    @property
-    def power(self):
-        return self.pdg.power
+        super().__init__(frequency,power,nyquist=nyquist,targetid=targetid,default_view=default_view,meta=meta)
 
     @staticmethod
-    def from_lightcurve(lc : LightCurve, f_min=None, f_max=None, remove_ranges = None
+    def from_lightcurve(lc : LightCurve, f_min=None, f_max=None, remove_ranges : List[Tuple[float]] = None
                         , samples_per_peak = 10):
+
+        """
+        Computes a periodogram from a Lightcurve object and normalizes it according to Parcivals theorem. It then
+        reflects the physical values in the Light curve and has the same units. It then returns a Periodogram object.
+
+        It also has a possibility to remove certain ranges from the periodogram.
+        :param lc: Lightcurve object
+        :param f_min: Lower range for the periodogram
+        :param f_max: Upper range for the periodogram
+        :param remove_ranges: List of tuples, that represent areas in the periodogram that are ignored. These are
+        removed from the periodogram
+        :param samples_per_peak: number of samples per peak
+        :return: Periodogram object
+        """
 
         nyquist = 1/(2*np.median(np.diff(lc.time)))
 
@@ -89,9 +94,31 @@ class Periodogram:
 
     def plot(self,scale='linear', ax=None, xlabel=None, ylabel=None, title='', style='lightkurve', view=None,
              unit=None,color='k', **kwargs):
+        """
+        Plots the periodogram. Same call signature as lightkurve.periodogram.Periodogram.
+        """
 
-        return self.pdg.plot(scale,ax,xlabel,ylabel,title,style,view,unit,linestyle='-',color=color,**kwargs)
+        if 'linestyle' in kwargs.keys():
+            ls = kwargs['linestyle']
+            del kwargs['linestyle']
+        else:
+            ls = '-'
+
+        if ylabel is not None:
+            ylabel = ylabel
+        elif 'ylabel' in kwargs.keys():
+            ylabel = kwargs['ylabel']
+            del kwargs['ylabel']
+        else:
+            ylabel='Amplitude [mag]'
+
+
+        return super().plot(scale,ax,xlabel,ylabel,title,style,view,unit,linestyle=ls,color=color,**kwargs)
 
     def to_csv(self,file):
-        frame = df.from_dict({'Frequency':self.pdg.frequency,'Power':self.pdg.power})
+        """
+        Stores the periodogram into a file.
+        :param file: File object
+        """
+        frame = df.from_dict({'Frequency':self.frequency,'Power':self.power})
         frame.to_csv(file)
