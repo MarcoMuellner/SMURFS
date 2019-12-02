@@ -274,7 +274,6 @@ class FFinder:
         self.f_min = f_min
         self.f_max = f_max
         self.lc: LightCurve = smurfs.lc
-        self.lc.time -= self.lc.time[0]
         self.periodogramm: Periodogram = Periodogram.from_lightcurve(self.lc, f_min=f_min, f_max=f_max)
         self.nyquist = smurfs.nyquist
 
@@ -394,7 +393,13 @@ class FFinder:
         :param plot_insignificant: If True, insignificant frequencies are shown
         :param kwargs: kwargs for Periodogram.plot
         """
-        ax: Axes = self.periodogramm.plot(ax=ax, color='grey', ylabel='Amplitude [mag]', **kwargs)
+        if 'color' in kwargs.keys():
+            color=kwargs['color']
+            del kwargs['color']
+        else:
+            color='grey'
+
+        ax: Axes = self.periodogramm.plot(ax=ax, color=color, ylabel='Amplitude [mag]', **kwargs)
 
         if plot_insignificant:
             frame = self.result
@@ -412,7 +417,7 @@ class FFinder:
             y_max = (np.abs(ax.get_ylim()[0]) + a) / (ax.get_ylim()[1] - ax.get_ylim()[0])
 
             ax.axvline(x=f, ymin=y_min, ymax=y_max, color='k')
-            ax.annotate(f'f{i[0]}', (f, a))
+            ax.annotate(f'f{i[0]+1}', (f, a))
 
         if show:
             pl.show()
@@ -510,7 +515,10 @@ class FFinder:
             params.append(f.f.nominal_value)
             params.append(f.phase.nominal_value)
 
-        return LightCurve(self.lc.time, self.lc.flux - sin_multiple(self.lc.time, *params))
+        try:
+            return LightCurve(self.lc.time, self.lc.flux - sin_multiple(self.lc.time, *params))
+        except u.UnitConversionError:
+            return LightCurve(self.lc.time, self.lc.flux - sin_multiple(self.lc.time, *params)*self.lc.flux.unit)
 
     def improve_result(self):
         """

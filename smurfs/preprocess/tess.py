@@ -90,10 +90,12 @@ def mag(lc: TessLightCurve) -> TessLightCurve:
     :return: reduced light curve object
     """
     lc = lc.remove_nans()
+    error = lc.flux_err/lc.flux
     lc.flux = -2.5 * np.log10(lc.flux)
     lc = lc.remove_nans()
     lc.flux -= np.median(lc.flux)
     lc.flux = lc.flux * u.mag
+    lc.flux_err = lc.flux*error
     return lc
 
 
@@ -110,6 +112,7 @@ def cut_ffi(tic_id: int) -> Tuple[TessLightCurve,Figure]:
         except:
             stars = eleanor.multi_sectors(tic=tic_id, sectors='all', tc=True)
     mprint(f.getvalue().strip(), log)
+
     lc_list = []
     data_list = []
     q_list = []
@@ -160,8 +163,10 @@ def get_tess_ffi_lc(target_name: str) -> Tuple[TessLightCurve,Figure]:
         hdulist = Tesscut.get_sectors(coordinates=c)
         if len(hdulist) == 0:
             raise ValueError(ctext(f"Can't find a TESS observation for {target_name}", error))
-
-        tic_star = Catalogs.query_region(f"{c.ra} {c.dec}", radius=0.0001, catalog="TIC")
+        try:
+            tic_star = Catalogs.query_region(f"{c.ra} {c.dec}", radius=0.0001, catalog="TIC")
+        except:
+            tic_star = Catalogs.query_region(f"{c.ra.value} {c.dec.value}", radius=0.0001, catalog="TIC")
 
         if len(tic_star) > 1:
             raise RuntimeWarning(ctext("Found two stars in the coordinates of this star!", error))

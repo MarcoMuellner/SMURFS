@@ -23,7 +23,7 @@ def testCreatedSin():
     pass
 
 def testGammaDoradus():
-    s = Smurfs(target_name='Gamma Doradus')
+    s = Smurfs(target_name='TIC 3243257')
     s.run(snr=4,window_size=2,extend_frequencies=3)
     #_ff.plot(show=True)
     s.plot_pdg(show=True)

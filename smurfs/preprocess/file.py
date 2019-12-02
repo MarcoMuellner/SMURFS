@@ -24,7 +24,7 @@ def load_file(file : str) -> LightCurve:
         lc = LightCurve(time=data[0], flux=data[1],flux_err=data[2])
 
     lc = lc.remove_nans()
-    lc.flux = lc.flux + float(10*np.median(lc.flux))
+    lc.flux = lc.flux + float(np.amin(lc.flux)) + 10
     lc = mag(lc)
     lc = lc.remove_outliers(4)
     lc = lc.remove_nans()

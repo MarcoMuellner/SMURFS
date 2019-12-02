@@ -15,6 +15,8 @@ from pyfcomb import get_combinations
 from uncertainties import unumpy as unp
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
+from io import StringIO
+from pandas import read_csv
 
 from smurfs.preprocess.tess import download_lc
 from smurfs.preprocess.file import load_file
@@ -23,6 +25,7 @@ from smurfs.signal.periodogram import Periodogram
 from smurfs.support.support import cd
 import smurfs.support.mprint as mpr
 from smurfs.support.mprint import *
+from uncertainties import ufloat_fromstr
 
 
 class Smurfs:
@@ -120,6 +123,7 @@ class Smurfs:
         self.skip_similar = None
         self.similar_chanel = None
         self.extend_frequencies = np.nan
+        self._notes = None
 
         mprint(f"Duty cycle for {self.label}: {'%.2f' % (self.duty_cycle * 100)}%", info)
 
@@ -238,6 +242,14 @@ class Smurfs:
         Returns a folded light curve. Signature equivalent to *lightkurve.LightCurve.fold*.
         """
         return self.lc.fold(period, t0, transit_midpoint)
+
+    @property
+    def notes(self):
+        return self._notes
+
+    @notes.setter
+    def notes(self,value):
+        self._notes = value
 
     def flatten(self, window_length=101, polyorder=2, return_trend=False, break_tolerance=5, niters=3, sigma=3,
                 mask=None, **kwargs):
@@ -408,6 +420,10 @@ class Smurfs:
                     self._ff.res_lc.to_csv("LC_residual.txt")
                     self._ff.res_pdg.to_csv("PS_residual.txt")
 
+                if self._notes is not None:
+                    with open("notes.txt",'w') as f:
+                        f.writelines(self._notes)
+
                 if store_obj:
                     pickle.dump(self, open("obj.smurfs", "wb"))
 
@@ -457,3 +473,26 @@ class Smurfs:
             raise IOError(ctext(f"Can't find any .smurfs file in {path}!", error))
 
         return pickle.load(open(load_file, 'rb'))
+
+    @staticmethod
+    def load_results(path: str):
+        """
+        Loads the pandas dataframes from the results file
+        :param path: exact path of the results file
+        :return: 3 pandas dataframes, settings, statistics and results
+        """
+
+        if not os.path.exists(path) or not path.endswith("_result.csv"):
+            raise IOError("You need to provide the exact path to the results file")
+
+        with open(path,'r') as f:
+            content = f.read()
+
+        settings = read_csv(StringIO(content.split("\n\n")[0]),skiprows=1)
+        statistics = read_csv(StringIO(content.split("\n\n")[1]),skiprows=2)
+        results = read_csv(StringIO(content.split("\n\n")[2]),skiprows=2,
+                           converters = {'frequency':ufloat_fromstr,
+                                         'amp':ufloat_fromstr,
+                                         'phase':ufloat_fromstr})
+
+        return settings,statistics,results
