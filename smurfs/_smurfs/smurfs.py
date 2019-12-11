@@ -65,11 +65,11 @@ class Smurfs:
     """
 
     def __init__(self, file=None, time=None, flux=None, target_name=None, flux_type='PDCSAP', label=None,
-                 quiet_flag=False):
+                 quiet_flag=False,mission = 'all'):
         mpr.quiet = quiet_flag
         self.validation_page : Figure= None
         if target_name is not None:
-            self.lc, self.validation_page = download_lc(target_name, flux_type)
+            self.lc, self.validation_page = download_lc(target_name, flux_type,mission)
             if label is None:
                 self.label = target_name
             else:

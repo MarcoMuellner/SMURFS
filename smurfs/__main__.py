@@ -73,6 +73,11 @@ def main(args = None):
                                                     "'star' object."
                         , action='store_true')
 
+    parser.add_argument("-m", "--mission", help="Three different missions are available: Kepler,TESS,K2. You can choose"
+                                                " the mission by setting this value. By default, all missions are"
+                                                " considered"
+                        , type=str,choices=["Kepler","TESS","K2"],default="all")
+
 
 
     """
@@ -124,7 +129,7 @@ def main(args = None):
         if len(target.split(".")) == 2 and os.path.basename(target).split(".")[1] in ['txt','dat']:
             s = Smurfs(file=target)
         else:
-            s = Smurfs(target_name=target,flux=args.fluxType)
+            s = Smurfs(target_name=target,flux=args.fluxType,mission=args.mission)
 
         improve_fit = args.improveFitMode == 'all'
 

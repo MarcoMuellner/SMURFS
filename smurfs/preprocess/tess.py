@@ -1,5 +1,5 @@
-from lightkurve import search_lightcurvefile, TessLightCurve, TessLightCurveFile
-from typing import List,Tuple
+from lightkurve import search_lightcurvefile, TessLightCurve, TessLightCurveFile, KeplerLightCurve, LightCurveCollection
+from typing import List, Tuple, Union
 from astroquery.simbad import Simbad
 from astropy.coordinates import SkyCoord
 import astropy.units as u
@@ -18,7 +18,7 @@ from matplotlib.gridspec import GridSpec
 import matplotlib.pyplot as pl
 
 
-def aperture_contour(ax : Axes, obj : eleanor.TargetData) -> Axes:
+def aperture_contour(ax: Axes, obj: eleanor.TargetData) -> Axes:
     """
     Plots a countour plot of the TPF with the aperture by Eleanor.
     :param ax: Axes object where this is plotted on
@@ -38,10 +38,11 @@ def aperture_contour(ax : Axes, obj : eleanor.TargetData) -> Axes:
     Z = g(X[:-1], Y[:-1])
 
     ax.contour(Z[::-1], [0.5], colors='w', linewidths=[4],
-                extent=[0 - 0.5, x[:-1].max() - 0.5, 0 - 0.5, y[:-1].max() - 0.5])
+               extent=[0 - 0.5, x[:-1].max() - 0.5, 0 - 0.5, y[:-1].max() - 0.5])
+
 
 def create_validation_page(data_list: List[eleanor.TargetData], q_list: List[np.ndarray],
-                           title : str) -> Figure:
+                           title: str) -> Figure:
     """
     Creates a validation page from the eleanor extraction of light curves from TESS FFIs.
     Contains the pixel cutout, the original and reduced light curve.
@@ -83,23 +84,30 @@ def create_validation_page(data_list: List[eleanor.TargetData], q_list: List[np.
     return fig
 
 
+from uncertainties import unumpy as unp, ufloat
+
+
 def mag(lc: TessLightCurve) -> TessLightCurve:
     """
     Converts and normalizes a LighCurve object to magnitudes.
     :param lc: lightcurve object
     :return: reduced light curve object
     """
+
     lc = lc.remove_nans()
-    error = lc.flux_err/lc.flux
-    lc.flux = -2.5 * np.log10(lc.flux)
-    lc = lc.remove_nans()
-    lc.flux -= np.median(lc.flux)
-    lc.flux = lc.flux * u.mag
-    lc.flux_err = lc.flux*error
+
+    flux = lc.flux + (np.abs(2 * np.amin(lc.flux)) if np.amin(lc.flux) < 0 else 100)
+    flux = unp.uarray(flux, lc.flux_err)
+    flux = -2.5 * unp.log10(flux)
+    flux = flux[~unp.isnan(flux)]
+    flux -= np.median(flux)
+
+    lc.flux = unp.nominal_values(flux) * u.mag
+    lc.flux_err = unp.std_devs(flux) * u.mag
     return lc
 
 
-def cut_ffi(tic_id: int) -> Tuple[TessLightCurve,Figure]:
+def cut_ffi(tic_id: int) -> Tuple[TessLightCurve, Figure]:
     """
     Extracts light curves from FFIs using TESScut and Eleanor. Querying all available sectors for a given TIC ID.
     :param tic_id: ID of the star in the TIC
@@ -125,7 +133,7 @@ def cut_ffi(tic_id: int) -> Tuple[TessLightCurve,Figure]:
         data_list.append(data)
         q_list.append(q)
 
-    fig = create_validation_page(data_list,q_list,f'TIC {tic_id}')
+    fig = create_validation_page(data_list, q_list, f'TIC {tic_id}')
 
     lc: TessLightCurve = lc_list[0]
     lc = mag(lc)
@@ -136,7 +144,7 @@ def cut_ffi(tic_id: int) -> Tuple[TessLightCurve,Figure]:
     return lc, fig
 
 
-def get_tess_ffi_lc(target_name: str) -> Tuple[TessLightCurve,Figure]:
+def get_tess_ffi_lc(target_name: str) -> Tuple[TessLightCurve, Figure]:
     """
     Tries to extract a light curve from TESS FFIs. If you do not provide a TIC number, it will try
     to look up the target on Simbad and link it to the TESS catalog using Simbad.
@@ -179,7 +187,26 @@ def get_tess_ffi_lc(target_name: str) -> Tuple[TessLightCurve,Figure]:
     return cut_ffi(tic_id)
 
 
-def download_lc(target_name: str, flux_type='PDCSAP') -> Tuple[TessLightCurve,Figure]:
+def combine_light_curves(target_list: List[Union[TessLightCurve, KeplerLightCurve]]) -> Union[
+    TessLightCurve, KeplerLightCurve]:
+    kepler_collection = LightCurveCollection([i for i in target_list if isinstance(i, KeplerLightCurve)])
+    tess_collection = LightCurveCollection([i for i in target_list if isinstance(i, TessLightCurve)])
+
+    if len(kepler_collection) != 0 and len(tess_collection) != 0:
+        kepler_lc: KeplerLightCurve = kepler_collection.stitch(corrector_func=mag)
+        tess_lc: TessLightCurve = tess_collection.stitch(corrector_func=mag)
+
+        return kepler_lc.remove_nans().remove_outliers(4,maxiters=1).append(tess_lc.remove_nans().remove_outliers(4,maxiters=1))
+    elif len(kepler_collection) != 0:
+        return kepler_collection.stitch(corrector_func=mag).remove_nans().remove_outliers(4,maxiters=1)
+    elif len(tess_collection) != 0:
+        return tess_collection.stitch(corrector_func=mag).remove_nans().remove_outliers(4, maxiters=1)
+    else:
+        raise ValueError(ctext("No light curves available for target!",error))
+
+
+def download_lc(target_name: str, flux_type='PDCSAP', mission: str = 'all') -> Tuple[
+    Union[TessLightCurve, KeplerLightCurve], Figure]:
     """
     Downloads a light curve using the TESS mission. If the star has been observed in the SC mode, it
     will download the original light curve from MAST. You can also choose the flux type you want to use.
@@ -193,32 +220,35 @@ def download_lc(target_name: str, flux_type='PDCSAP') -> Tuple[TessLightCurve,Fi
     :return: A TessLightCurve object containing the Light curve of the objectl, validation page if
     extracted from FFI
     """
-    mprint(f'Searching processed light curves for {target_name} ...', log)
-    res = search_lightcurvefile(target_name)
-    if len(res) == 0:
+    chosen_mission = [mission] if mission != 'all' else ('Kepler', 'K2', 'TESS')
+    mprint(f"Searching processed light curves for {target_name} on mission(s) {','.join(chosen_mission)} ... ", log)
+    res = search_lightcurvefile(target_name, mission=chosen_mission)
+
+    if len(res) == 0 and mission in ['TESS', 'all']:
         mprint(f'No light curve found using light kurve. Checking TESS FFIs ...', log)
-        lc,fig = get_tess_ffi_lc(target_name)
-    else:
+        lc, fig = get_tess_ffi_lc(target_name)
+    elif len(res) != 0:
         fig = None
         mprint(f"Found processed light curve for {target_name}!", info)
         res = res.download_all()
-        type = 'TESS' if isinstance(res.data[0], TessLightCurveFile) else 'Kepler'
-        mprint(f"Using {type} observations! Combining sectors ...", log)
+        types = []
+
+        for d in res.data:
+            type = 'TESS' if isinstance(d, TessLightCurveFile) else 'Kepler'
+            if type not in types:
+                types.append(type)
+
+        mprint(f"Using {','.join(types)} observations! Combining sectors ...", log)
 
         if flux_type == 'PDCSAP':
-            lc: TessLightCurve = res.PDCSAP_FLUX.data[0]
+            lc_set: List[Union[TessLightCurve, KeplerLightCurve]] = [i for i in res.PDCSAP_FLUX.data]
         elif flux_type == 'SAP':
-            lc: TessLightCurve = res.SAP_FLUX.data[0]
+            lc_set: List[Union[TessLightCurve, KeplerLightCurve]] = [i for i in res.SAP_FLUX.data]
         else:
             raise ValueError(ctext("Flux type needs to be either PDCSAP or SAP", error))
+        lc = combine_light_curves(lc_set)
+    else:
+        raise ValueError(ctext(f"No light curve available for {target_name} on mission(s) {chosen_mission}"))
 
-        lc = mag(lc)
-        if len(res) > 1:
-            data: List[TessLightCurve] = res.PDCSAP_FLUX.data[1:] if flux_type == 'PDCSAP' else res.SAP_FLUX.data[1:]
-            for d in data:
-                lc = lc.append(mag(d))
-
-    lc = lc.remove_nans()
-    lc = lc.remove_outliers(4)
     mprint(f"Total observation length: {'%.2f' % (lc.time[-1] - lc.time[0])} days.", log)
-    return lc,fig
+    return lc, fig
