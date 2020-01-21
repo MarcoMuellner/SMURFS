@@ -107,7 +107,7 @@ def mag(lc: TessLightCurve) -> TessLightCurve:
     return lc
 
 
-def cut_ffi(tic_id: int) -> Tuple[TessLightCurve, Figure]:
+def cut_ffi(tic_id: int,clip :float = 4,iter : int = 1) -> Tuple[TessLightCurve, Figure]:
     """
     Extracts light curves from FFIs using TESScut and Eleanor. Querying all available sectors for a given TIC ID.
     :param tic_id: ID of the star in the TIC
@@ -115,10 +115,10 @@ def cut_ffi(tic_id: int) -> Tuple[TessLightCurve, Figure]:
     """
     f = io.StringIO()
     with redirect_stdout(f):
-        try:
-            stars = eleanor.multi_sectors(tic=tic_id, sectors='all')
-        except:
-            stars = eleanor.multi_sectors(tic=tic_id, sectors='all', tc=True)
+        stars = eleanor.multi_sectors(tic=tic_id, sectors='all', tc=True)
+        #try:
+        #    stars = eleanor.multi_sectors(tic=tic_id, sectors='all')
+        #except:
     mprint(f.getvalue().strip(), log)
 
     lc_list = []
@@ -135,16 +135,12 @@ def cut_ffi(tic_id: int) -> Tuple[TessLightCurve, Figure]:
 
     fig = create_validation_page(data_list, q_list, f'TIC {tic_id}')
 
-    lc: TessLightCurve = lc_list[0]
-    lc = mag(lc)
-    if len(lc_list) > 1:
-        for l in lc_list:
-            lc = lc.append(mag(l))
+    lc : TessLightCurve = combine_light_curves(lc_list,clip,iter)
     mprint(f"Extracted light curve for TIC {tic_id}!", info)
     return lc, fig
 
 
-def get_tess_ffi_lc(target_name: str) -> Tuple[TessLightCurve, Figure]:
+def get_tess_ffi_lc(target_name: str,clip :float = 4,iter : int = 1) -> Tuple[TessLightCurve, Figure]:
     """
     Tries to extract a light curve from TESS FFIs. If you do not provide a TIC number, it will try
     to look up the target on Simbad and link it to the TESS catalog using Simbad.
@@ -184,10 +180,10 @@ def get_tess_ffi_lc(target_name: str) -> Tuple[TessLightCurve, Figure]:
         mprint(f"Found TESS observations for {target_name} with TIC {tic_id}", info)
 
     mprint(f"Extracting light curves from FFIs, this may take a bit ... ", log)
-    return cut_ffi(tic_id)
+    return cut_ffi(tic_id,clip,iter)
 
 
-def combine_light_curves(target_list: List[Union[TessLightCurve, KeplerLightCurve]]) -> Union[
+def combine_light_curves(target_list: List[Union[TessLightCurve, KeplerLightCurve]],sigma_clip :float = 4,iters : int = 1) -> Union[
     TessLightCurve, KeplerLightCurve]:
     kepler_collection = LightCurveCollection([i for i in target_list if isinstance(i, KeplerLightCurve)])
     tess_collection = LightCurveCollection([i for i in target_list if isinstance(i, TessLightCurve)])
@@ -196,16 +192,16 @@ def combine_light_curves(target_list: List[Union[TessLightCurve, KeplerLightCurv
         kepler_lc: KeplerLightCurve = kepler_collection.stitch(corrector_func=mag)
         tess_lc: TessLightCurve = tess_collection.stitch(corrector_func=mag)
 
-        return kepler_lc.remove_nans().remove_outliers(4,maxiters=1).append(tess_lc.remove_nans().remove_outliers(4,maxiters=1))
+        return kepler_lc.remove_nans().remove_outliers(sigma_clip,maxiters=iters).append(tess_lc.remove_nans().remove_outliers(4,maxiters=1))
     elif len(kepler_collection) != 0:
-        return kepler_collection.stitch(corrector_func=mag).remove_nans().remove_outliers(4,maxiters=1)
+        return kepler_collection.stitch(corrector_func=mag).remove_nans().remove_outliers(sigma_clip,maxiters=iters)
     elif len(tess_collection) != 0:
-        return tess_collection.stitch(corrector_func=mag).remove_nans().remove_outliers(4, maxiters=1)
+        return tess_collection.stitch(corrector_func=mag).remove_nans().remove_outliers(sigma_clip,maxiters=iters)
     else:
         raise ValueError(ctext("No light curves available for target!",error))
 
 
-def download_lc(target_name: str, flux_type='PDCSAP', mission: str = 'all') -> Tuple[
+def download_lc(target_name: str, flux_type='PDCSAP', mission: str = 'all',sigma_clip=4,iters=1) -> Tuple[
     Union[TessLightCurve, KeplerLightCurve], Figure]:
     """
     Downloads a light curve using the TESS mission. If the star has been observed in the SC mode, it
@@ -226,7 +222,7 @@ def download_lc(target_name: str, flux_type='PDCSAP', mission: str = 'all') -> T
 
     if len(res) == 0 and mission in ['TESS', 'all']:
         mprint(f'No light curve found using light kurve. Checking TESS FFIs ...', log)
-        lc, fig = get_tess_ffi_lc(target_name)
+        lc, fig = get_tess_ffi_lc(target_name,sigma_clip,iters)
     elif len(res) != 0:
         fig = None
         mprint(f"Found processed light curve for {target_name}!", info)

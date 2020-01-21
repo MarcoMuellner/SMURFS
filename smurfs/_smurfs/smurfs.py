@@ -65,11 +65,11 @@ class Smurfs:
     """
 
     def __init__(self, file=None, time=None, flux=None, target_name=None, flux_type='PDCSAP', label=None,
-                 quiet_flag=False,mission = 'all'):
+                 quiet_flag=False,mission = 'all',sigma_clip : float=4,iters :int=1):
         mpr.quiet = quiet_flag
         self.validation_page : Figure= None
         if target_name is not None:
-            self.lc, self.validation_page = download_lc(target_name, flux_type,mission)
+            self.lc, self.validation_page = download_lc(target_name, flux_type,mission,sigma_clip,iters)
             if label is None:
                 self.label = target_name
             else:
@@ -266,7 +266,7 @@ class Smurfs:
                                                mask,
                                                **kwargs)
 
-        self.lc = self.lc.remove_outliers(4)
+        self.lc = self.lc.remove_outliers(sigma,maxiters=niters)
         self.lc = self.lc.remove_nans()
         self.pdg: Periodogram = Periodogram.from_lightcurve(self.lc)
 

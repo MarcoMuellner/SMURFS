@@ -9,7 +9,8 @@ import pickle
 import subprocess
 import sys
 
-def main(args = None):
+
+def main(args=None):
     if args is None:
         args = sys.argv[1:]
 
@@ -39,14 +40,15 @@ def main(args = None):
                              "might lead to unknown behaviour",
                         action='store_true')
 
-    parser.add_argument("-ef","--extendFrequencies",
+    parser.add_argument("-ef", "--extendFrequencies",
                         help="Extends the frequency analysis by n frequencies, meaning, the analysis will only stop"
-                             "after n insignificant frequencies are found.",type=int,default=0)
+                             "after n insignificant frequencies are found.", type=int, default=0)
 
-    parser.add_argument("-imf","--improveFitMode",help="Three different fit improvement modes are available:\n1)'all' "
-                                                       "-> improve fit after every frequency\n2)'end' -> improve "
-                                                       "fit after last significant frequency was found.\n3) 'none' -> "
-                                                       "Disables improve fit.",type=str,choices=['all','end','none'],
+    parser.add_argument("-imf", "--improveFitMode",
+                        help="Three different fit improvement modes are available:\n1)'all' "
+                             "-> improve fit after every frequency\n2)'end' -> improve "
+                             "fit after last significant frequency was found.\n3) 'none' -> "
+                             "Disables improve fit.", type=str, choices=['all', 'end', 'none'],
                         default='all')
 
     parser.add_argument("-fm", "--fitMethod", help="Using this flag you can either choose 'scipy' "
@@ -54,19 +56,19 @@ def main(args = None):
                                                    "'lmfit' is activated by default",
                         type=str, choices=["scipy", "lmfit"], default="lmfit")
 
-    parser.add_argument("-ft","--fluxType", help="If you input SC Tess observations (TIC IDs), this flag "
-                                                 "allows you to choose between PDCSAP and SAP flux. Default "
-                                                 "is PDCSAP",
-                        type=str,choices=["PDCSAP","SAP"],default="PDCSAP")
+    parser.add_argument("-ft", "--fluxType", help="If you input SC Tess observations (TIC IDs), this flag "
+                                                  "allows you to choose between PDCSAP and SAP flux. Default "
+                                                  "is PDCSAP",
+                        type=str, choices=["PDCSAP", "SAP"], default="PDCSAP")
 
-    parser.add_argument("-so","--storeObject",help="If this flag is set, the SMURFS object is stored in the "
-                                                   "results. You can later use this object to load the "
-                                                   "_result into a python file using 'Smurfs.from_path'."
-                        ,action='store_true')
+    parser.add_argument("-so", "--storeObject", help="If this flag is set, the SMURFS object is stored in the "
+                                                     "results. You can later use this object to load the "
+                                                     "_result into a python file using 'Smurfs.from_path'."
+                        , action='store_true')
 
-    parser.add_argument("-sp","--savePath",help="Allows you to set the save path of the analysis. By "
-                                                "default it will save it in the same folder, where "
-                                                "the module was called.",type=str,default=".")
+    parser.add_argument("-sp", "--savePath", help="Allows you to set the save path of the analysis. By "
+                                                  "default it will save it in the same folder, where "
+                                                  "the module was called.", type=str, default=".")
 
     parser.add_argument("-i", "--interactive", help="Using this flag will automatically start an iPython shell. "
                                                     "This allows for direct interaction with the result using the "
@@ -76,9 +78,12 @@ def main(args = None):
     parser.add_argument("-m", "--mission", help="Three different missions are available: Kepler,TESS,K2. You can choose"
                                                 " the mission by setting this value. By default, all missions are"
                                                 " considered"
-                        , type=str,choices=["Kepler","TESS","K2"],default="all")
+                        , type=str, choices=["Kepler", "TESS", "K2"], default="all")
 
-
+    parser.add_argument("-cl", "--sigmaClip", help="Sets the sigma for the sigma clipping. Default is 4.", type=float,
+                        default=4)
+    parser.add_argument("-it", "--iters", help="Sets the iterations for the sigma clipping. Default is 1.", type=int,
+                        default=1)
 
     """
     #todo replace this
@@ -111,8 +116,6 @@ def main(args = None):
     parser.add_argument("--version", help="Shows version of SMURFS", action='version',
                         version='SMURFS {version}'.format(version=__version__))
 
-
-
     args = parser.parse_args(args)
 
     if "," in args.target:
@@ -126,42 +129,44 @@ def main(args = None):
     if len(targets) == 1:
         target = targets[0]
 
-        if len(target.split(".")) == 2 and os.path.basename(target).split(".")[1] in ['txt','dat']:
-            s = Smurfs(file=target)
+        if len(target.split(".")) == 2 and os.path.basename(target).split(".")[1] in ['txt', 'dat']:
+            s = Smurfs(file=target,flux_type=args.fluxType)
         else:
-            s = Smurfs(target_name=target,flux=args.fluxType,mission=args.mission)
+            s = Smurfs(target_name=target, flux_type=args.fluxType, mission=args.mission,sigma_clip = args.sigmaClip,iters=args.iters)
 
         improve_fit = args.improveFitMode == 'all'
 
-        s.run(snr=args.snr,window_size=args.windowSize,f_min=f_min,f_max=f_max,
-              skip_similar=args.skipSimilarFrequencies,similar_chancel=not args.skipCutoff
-              ,extend_frequencies=args.extendFrequencies,improve_fit=improve_fit
-              ,mode=args.fitMethod)
+        s.run(snr=args.snr, window_size=args.windowSize, f_min=f_min, f_max=f_max,
+              skip_similar=args.skipSimilarFrequencies, similar_chancel=not args.skipCutoff
+              , extend_frequencies=args.extendFrequencies, improve_fit=improve_fit
+              , mode=args.fitMethod)
 
         if args.improveFitMode == 'end':
             mprint("Improving fit ...", state)
             s.improve_result()
 
-        s.save(args.savePath,args.storeObject)
+        s.save(args.savePath, args.storeObject)
 
-        #start interactive shell, by loading smurfs object directly into the shell
+        # start interactive shell, by loading smurfs object directly into the shell
         if args.interactive:
-            mprint("Starting interactive shell. Use the 'star' object to interact with the result!",state)
+            mprint("Starting interactive shell. Use the 'star' object to interact with the result!", state)
             pickle.dump(s, open("i_obj.smurfs", "wb"))
-            cmd = ["ipython","-i","-c","from smurfs import Smurfs;import pickle;star : Smurfs = pickle.load(open('i_obj.smurfs', 'rb'));import os;os.remove('i_obj.smurfs');import matplotlib.pyplot as pl;pl.ion()"]
+            cmd = ["ipython", "-i", "-c",
+                   "from smurfs import Smurfs;import pickle;star : Smurfs = pickle.load(open('i_obj.smurfs', 'rb'));import os;os.remove('i_obj.smurfs');import matplotlib.pyplot as pl;pl.ion()"]
             subprocess.call(cmd)
             mprint("Done", info)
     else:
-        if len(targets[0].split(".")) == 2 and os.path.basename(targets[0]).split(".")[1] in ['txt','dat']:
+        if len(targets[0].split(".")) == 2 and os.path.basename(targets[0]).split(".")[1] in ['txt', 'dat']:
             s = MultiSmurfs(file_list=targets)
         else:
-            s = MultiSmurfs(target_list=targets,flux_types=args.fluxType)
+            s = MultiSmurfs(target_list=targets, flux_types=args.fluxType)
 
-        s.run(snr=args.snr,window_size=args.windowSize,f_min=f_min,f_max=f_max,
-              skip_similar=args.skipSimilarFrequencies,similar_chancel=not args.skipCutoff
-              ,extend_frequencies=args.extendFrequencies,improve_fit=args.disableImproveFrequencies
-              ,mode=args.fitMethod)
+        s.run(snr=args.snr, window_size=args.windowSize, f_min=f_min, f_max=f_max,
+              skip_similar=args.skipSimilarFrequencies, similar_chancel=not args.skipCutoff
+              , extend_frequencies=args.extendFrequencies, improve_fit=args.disableImproveFrequencies
+              , mode=args.fitMethod)
         s.save(args.savePath, args.storeObject)
+
 
 if __name__ == "__main__":
     main()

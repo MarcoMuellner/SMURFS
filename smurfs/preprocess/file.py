@@ -4,7 +4,7 @@ from lightkurve import LightCurve
 from smurfs.preprocess.tess import mag
 from smurfs.support.mprint import *
 
-def load_file(file : str) -> LightCurve:
+def load_file(file : str,clip :float= 4,it : int = 1) -> LightCurve:
     """
     Loads and normalizes target content
     :param file: Name of target including path
@@ -26,7 +26,7 @@ def load_file(file : str) -> LightCurve:
     lc = lc.remove_nans()
     lc.flux = lc.flux + float(np.amin(lc.flux)) + 10
     lc = mag(lc)
-    lc = lc.remove_outliers(4)
+    lc = lc.remove_outliers(clip,maxiters=it)
     lc = lc.remove_nans()
     mprint(f"Total observation length: {'%.2f' % (lc.time[-1] - lc.time[0])} days.",log)
     mprint("Extracted data from target!",info)
