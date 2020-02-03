@@ -26,6 +26,7 @@ from smurfs.support.support import cd
 import smurfs.support.mprint as mpr
 from smurfs.support.mprint import *
 from uncertainties import ufloat_fromstr
+import matplotlib.backends.backend_pdf
 
 
 class Smurfs:
@@ -65,11 +66,11 @@ class Smurfs:
     """
 
     def __init__(self, file=None, time=None, flux=None, target_name=None, flux_type='PDCSAP', label=None,
-                 quiet_flag=False,mission = 'all',sigma_clip : float=4,iters :int=1):
+                 quiet_flag=False,mission = 'TESS',sigma_clip : float=4,iters :int=1,do_pca : bool=False,do_psf :bool = False):
         mpr.quiet = quiet_flag
         self.validation_page : Figure= None
         if target_name is not None:
-            self.lc, self.validation_page = download_lc(target_name, flux_type,mission,sigma_clip,iters)
+            self.lc, self.validation_page = download_lc(target_name, flux_type,mission,sigma_clip,iters,do_pca,do_psf)
             if label is None:
                 self.label = target_name
             else:
@@ -383,14 +384,13 @@ class Smurfs:
             raise IOError(ctext(f"'{path}' does not exist!", error))
 
         mprint("Saving results, this may take a bit ...", log)
-
         proj_path = os.path.join(path, self.label.replace(" ","_"))
         index = 1
         while True:
             if not os.path.exists(proj_path):
                 break
 
-            proj_path = os.path.join(path, self.label + f"_{index}")
+            proj_path = os.path.join(path, self.label.replace(" ","_") + f"_{index}")
             index += 1
 
         os.makedirs(proj_path)
@@ -449,8 +449,14 @@ class Smurfs:
                     pl.close()
 
                 if self.validation_page is not None:
-                    self.validation_page.savefig("Validation_page.pdf")
-                    pl.close(self.validation_page)
+                    pdf = matplotlib.backends.backend_pdf.PdfPages("Validation_page.pdf")
+                    for fig in self.validation_page: ## will open an empty extra figure :(
+                        pdf.savefig(fig)
+                    pdf.close()
+
+                    for fig in self.validation_page:
+                        pl.close(fig)
+
         print(f'\x1b[7;32;40m {self.label} Data saved! \x1b[0m')
 
     @staticmethod

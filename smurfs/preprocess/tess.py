@@ -16,9 +16,25 @@ from matplotlib.figure import Figure
 from matplotlib.axes import Axes
 from matplotlib.gridspec import GridSpec
 import matplotlib.pyplot as pl
+from astroquery.mast import Catalogs
+from astroquery.mast import Observations
+import astropy.units as u
+from matplotlib import rcParams
+import warnings
+
+params = {
+    'axes.labelsize': 16,
+    #   'text.fontsize': 8,
+    'legend.fontsize': 18,
+    'xtick.labelsize': 18,
+    'ytick.labelsize': 18,
+    'text.usetex': False,
+    'figure.figsize': [4.5, 4.5]
+}
+rcParams.update(params)
 
 
-def aperture_contour(ax: Axes, obj: eleanor.TargetData) -> Axes:
+def aperture_contour(ax: Axes, obj: eleanor.TargetData):
     """
     Plots a countour plot of the TPF with the aperture by Eleanor.
     :param ax: Axes object where this is plotted on
@@ -27,7 +43,7 @@ def aperture_contour(ax: Axes, obj: eleanor.TargetData) -> Axes:
     """
     aperture = obj.aperture
 
-    ax.imshow(obj.tpf[0])
+    ax.imshow(obj.tpf[0],cmap='binary')
 
     f = lambda x, y: aperture[int(y), int(x)]
     g = np.vectorize(f)
@@ -37,51 +53,80 @@ def aperture_contour(ax: Axes, obj: eleanor.TargetData) -> Axes:
     X, Y = np.meshgrid(x[:-1], y[:-1])
     Z = g(X[:-1], Y[:-1])
 
-    ax.contour(Z[::-1], [0.5], colors='w', linewidths=[4],
+    ax.contour(Z[:-1], [0.5], colors='r', linewidths=[4],
                extent=[0 - 0.5, x[:-1].max() - 0.5, 0 - 0.5, y[:-1].max() - 0.5])
 
 
 def create_validation_page(data_list: List[eleanor.TargetData], q_list: List[np.ndarray],
-                           title: str) -> Figure:
-    """
-    Creates a validation page from the eleanor extraction of light curves from TESS FFIs.
-    Contains the pixel cutout, the original and reduced light curve.
-    :param data_list: List of tpfs from eleanor
-    :param q_list: Quality flag list
-    :param title: Title of pplot
-    """
-    fig: Figure = pl.figure(figsize=(14, 12 + 4 * len(data_list)))
-    height_ratio = [2] + [1 for i in range(len(data_list) - 1)] + [1]
-    gs = GridSpec(len(data_list) + 1, 4, width_ratios=[1, 1, 1, 1], height_ratios=height_ratio)
-    ax: Axes = fig.add_subplot(gs[0, :])
+                           title: str,do_psf = False, do_pca = False,flux_type : str = "PDCSAP") -> List[Figure]:
+
+    fig_main: Figure = pl.figure(figsize=(11.69,8.27),dpi=100)
+    ax : Axes= fig_main.add_subplot()
 
     for data, q in zip(data_list, q_list):
-        ax.plot(data.time[q], data.corr_flux[q] - np.median(data.corr_flux[q]), '.', markersize=2,
-                label=f"Sector {data.source_info.sector}")
+        if flux_type == 'PDCSAP':
+            ax.plot(data.time[q], data.pca_flux[q] - np.median(data.pca_flux[q]), '.', markersize=2,
+                    label=f"Sector {data.source_info.sector}")
+        elif flux_type == 'PSF':
+            ax.plot(data.time[q], data.psf_flux[q] - np.median(data.psf_flux[q]), '.', markersize=2,
+                    label=f"Sector {data.source_info.sector}")
+        else:
+            ax.plot(data.time[q], data.corr_flux[q] - np.median(data.corr_flux[q]), '.', markersize=2,
+                    label=f"Sector {data.source_info.sector}")
     ax.legend()
     ax.set_xlabel("Time")
     ax.set_ylabel("Flux")
+    fig_main.suptitle(f"{title} - extracted light curve, flux type: {flux_type}")
+    pl.tight_layout()
+
+    reduction_figs = []
 
     for i, (data, q) in enumerate(zip(data_list, q_list)):
-        ax: Axes = fig.add_subplot(gs[i + 1, 0])
-        aperture_contour(ax, data)
-        ax.set_title("TPF with aperture")
+        fig : Figure= pl.figure(figsize=(8.27,11.69),dpi=100)
+        gs = GridSpec(3,3, width_ratios=[1, 1, 1], height_ratios=[3,3,2])
 
-        ax: Axes = fig.add_subplot(gs[i + 1, 1:])
-        ax.plot(data.time[q],
-                data.raw_flux[q] / np.median(data.raw_flux[q]) - 0.01, 'k.',
-                label='Raw flux')
-        ax.plot(data.time[q],
-                data.corr_flux[q] / np.median(data.corr_flux[q]) + 0.01, 'r.',
-                label='Corrected flux')
+        ax: Axes = fig.add_subplot(gs[0, 0:])
+
+        ax.plot(data.time[q], data.raw_flux[q]/np.nanmedian(data.raw_flux[q])+0.2, 'ok',label='Raw flux',markersize=1)
+        ax.plot(data.time[q], data.corr_flux[q]/np.nanmedian(data.corr_flux[q]) + 0.1, 'or',label='Corrected flux',markersize=1)
+        if do_pca:
+            ax.plot(data.time[q], data.pca_flux[q]/np.nanmedian(data.pca_flux[q]), 'og',label='PCA flux',markersize=1) #aperture × TPF + background subtraction + cotrending basis vectors
+        if do_psf:
+            ax.plot(data.time[q], data.psf_flux[q]/np.nanmedian(data.psf_flux[q]) - 0.1, 'ob',label='PSF modelled flux',markersize=1)
         ax.legend()
 
-        ax.set_title(f"Sector {data.source_info.sector}")
+        ax: Axes = fig.add_subplot(gs[1, 0:])
+        ax.plot(data.time, data.flux_bkg, 'k', label='1D postcard', linewidth=2)
+        ax.plot(data.time, data.tpf_flux_bkg, 'r--', label='1D TPF', linewidth=1)
+        ax.legend()
+        ax.set_title("Background flux")
 
-    fig.suptitle(f"{title}")
-    fig.subplots_adjust(hspace=0.3)
+        ax: Axes = fig.add_subplot(gs[2, 0])
+        aperture_contour(ax, data)
+        ax.set_title("TPF with aperture")
+        ax.set_xticks([])
+        ax.set_yticks([])
 
-    return fig
+        ax: Axes = fig.add_subplot(gs[2, 1])
+        tpf_data = data.tpf[0]
+        tpf_data[data.aperture != 1] = 0
+        ax.imshow(tpf_data,cmap='binary')
+        ax.set_title("Aperture content")
+        ax.set_yticks([])
+        ax.set_xticks([])
+
+        ax: Axes = fig.add_subplot(gs[2, 2])
+        ax.imshow(data.bkg_tpf[0],cmap='binary')
+        ax.set_title("Interpolated background")
+        ax.set_yticks([])
+        ax.set_xticks([])
+
+        fig.suptitle(f"{title} - Sector {data.source_info.sector}")
+        pl.tight_layout()
+
+        reduction_figs.append(fig)
+
+    return  [fig_main] + reduction_figs
 
 
 from uncertainties import unumpy as unp, ufloat
@@ -107,40 +152,53 @@ def mag(lc: TessLightCurve) -> TessLightCurve:
     return lc
 
 
-def cut_ffi(tic_id: int,clip :float = 4,iter : int = 1) -> Tuple[TessLightCurve, Figure]:
+def cut_ffi(tic_id: int,clip :float = 4,iter : int = 1,do_pca : bool = False, do_psf :bool = False,flux_type = 'PDCSAP') -> Tuple[TessLightCurve, List[Figure]]:
     """
     Extracts light curves from FFIs using TESScut and Eleanor. Querying all available sectors for a given TIC ID.
     :param tic_id: ID of the star in the TIC
     :return: Tess light curve and figure containing validation page
     """
+    flux_types = ['SAP','PDCSAP', 'PSF']
+    if flux_type not in flux_types:
+        raise ValueError(mprint(f"Flux type {flux_type} not recognized. Possible values are: {flux_types}",error))
     f = io.StringIO()
     with redirect_stdout(f):
         stars = eleanor.multi_sectors(tic=tic_id, sectors='all', tc=True)
-        #try:
-        #    stars = eleanor.multi_sectors(tic=tic_id, sectors='all')
-        #except:
     mprint(f.getvalue().strip(), log)
 
     lc_list = []
     data_list = []
     q_list = []
 
+    pca_flag = do_pca or flux_type == 'PDCSAP'
+    psf_flag = do_psf or flux_type == 'PSF'
+
     for star in stars:
-        data = eleanor.TargetData(star, height=15, width=15, bkg_size=31, do_psf=False, do_pca=False)
+
+        f = io.StringIO()
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            data = eleanor.TargetData(star, height=15, width=15, bkg_size=31, do_pca=pca_flag, do_psf=psf_flag)
+        mprint(f.getvalue().strip(), log)
         q = data.quality == 0
-        lc_list.append(TessLightCurve(time=data.time[q], flux=data.corr_flux[q], targetid=tic_id))
+        if flux_type == 'SAP':
+            lc_list.append(TessLightCurve(time=data.time[q], flux=data.corr_flux[q], targetid=tic_id))
+        elif flux_type == 'PDCSAP':
+            lc_list.append(TessLightCurve(time=data.time[q], flux=data.pca_flux[q], targetid=tic_id))
+        else:
+            lc_list.append(TessLightCurve(time=data.time[q], flux=data.psf_flux[q], targetid=tic_id))
 
         data_list.append(data)
         q_list.append(q)
 
-    fig = create_validation_page(data_list, q_list, f'TIC {tic_id}')
+    fig = create_validation_page(data_list, q_list, f'TIC {tic_id}',do_pca=pca_flag,do_psf=psf_flag,flux_type=flux_type)
 
     lc : TessLightCurve = combine_light_curves(lc_list,clip,iter)
     mprint(f"Extracted light curve for TIC {tic_id}!", info)
     return lc, fig
 
 
-def get_tess_ffi_lc(target_name: str,clip :float = 4,iter : int = 1) -> Tuple[TessLightCurve, Figure]:
+def get_tess_ffi_lc(target_name: str,clip :float = 4,iter : int = 1,do_pca : bool= False, do_psf :bool = False,flux_type : str = 'PDCSAP') -> Tuple[TessLightCurve, List[Figure]]:
     """
     Tries to extract a light curve from TESS FFIs. If you do not provide a TIC number, it will try
     to look up the target on Simbad and link it to the TESS catalog using Simbad.
@@ -157,30 +215,32 @@ def get_tess_ffi_lc(target_name: str,clip :float = 4,iter : int = 1) -> Tuple[Te
     else:
         mprint(f"Querying simbad for {target_name}", log)
 
-        simbad_query = Simbad.query_object(target_name)
-        if simbad_query is None:
-            raise ValueError(ctext(f"Can't find a simbad entry for {target_name}", error))
+        tic_star = Catalogs.query_object(target_name,radius=0.0001,catalog='TIC')
+        if len(tic_star) == 0:
+            simbad_query = Simbad.query_object(target_name)
+            if simbad_query is None:
+                raise ValueError(ctext(f"Can't find a simbad entry for {target_name}", error))
 
-        c = SkyCoord(simbad_query[0]['RA'] + " " + simbad_query[0]['DEC'], unit=(u.hourangle, u.deg))
-        mprint(f"Found {target_name} at {c}. Searching for TESS observations using TESScut ...", info)
+            c = SkyCoord(simbad_query[0]['RA'] + " " + simbad_query[0]['DEC'], unit=(u.hourangle, u.deg))
+            mprint(f"Found {target_name} at {c}. Searching for TESS observations using TESScut ...", info)
 
-        hdulist = Tesscut.get_sectors(coordinates=c)
-        if len(hdulist) == 0:
-            raise ValueError(ctext(f"Can't find a TESS observation for {target_name}", error))
-        try:
-            tic_star = Catalogs.query_region(f"{c.ra} {c.dec}", radius=0.0001, catalog="TIC")
-        except:
-            tic_star = Catalogs.query_region(f"{c.ra.value} {c.dec.value}", radius=0.0001, catalog="TIC")
+            hdulist = Tesscut.get_sectors(coordinates=c)
+            if len(hdulist) == 0:
+                raise ValueError(ctext(f"Can't find a TESS observation for {target_name}", error))
+            try:
+                tic_star = Catalogs.query_region(f"{c.ra} {c.dec}", radius=0.0001, catalog="TIC")
+            except:
+                tic_star = Catalogs.query_region(f"{c.ra.value} {c.dec.value}", radius=0.0001, catalog="TIC")
 
-        if len(tic_star) > 1:
-            raise RuntimeWarning(ctext("Found two stars in the coordinates of this star!", error))
+            if len(tic_star) > 1:
+                raise RuntimeWarning(ctext("Found two stars in the coordinates of this star!", error))
 
         tic_star = tic_star[0]
         tic_id = tic_star['ID']
         mprint(f"Found TESS observations for {target_name} with TIC {tic_id}", info)
 
     mprint(f"Extracting light curves from FFIs, this may take a bit ... ", log)
-    return cut_ffi(tic_id,clip,iter)
+    return cut_ffi(tic_id,clip,iter,do_pca,do_psf,flux_type)
 
 
 def combine_light_curves(target_list: List[Union[TessLightCurve, KeplerLightCurve]],sigma_clip :float = 4,iters : int = 1) -> Union[
@@ -201,29 +261,59 @@ def combine_light_curves(target_list: List[Union[TessLightCurve, KeplerLightCurv
         raise ValueError(ctext("No light curves available for target!",error))
 
 
-def download_lc(target_name: str, flux_type='PDCSAP', mission: str = 'all',sigma_clip=4,iters=1) -> Tuple[
-    Union[TessLightCurve, KeplerLightCurve], Figure]:
+def download_lc(target_name: str, flux_type='PDCSAP', mission: str = 'TESS',sigma_clip=4,iters=1,do_pca : bool = False,do_psf :bool= False) -> Tuple[
+    Union[TessLightCurve, KeplerLightCurve], Union[List[Figure],None]]:
     """
     Downloads a light curve using the TESS mission. If the star has been observed in the SC mode, it
     will download the original light curve from MAST. You can also choose the flux type you want to use.
 
     If it wasn't observed in SC mode, it will try to extract a light curve from the FFIs if the target has
     been observed by TESS.
-    :param target_name: The name of the target. It is recommended to use the TIC ID directly, if you provide
-    any other name, it needs to be able to be looked up in Simbad. It then links the target by the coordinates
-    from Simbad to the TIC catalogue.
+
+    You can also download light curves of stars that are observed by the K2 or Kepler mission, by setting
+    the mission parameter.
+    :param target_name: Name of the target. You can either provide the TIC ID (TIC ...), Kepler ID (KIC ...),
+    K2 ID(EPIC ...) or a name that is resolvable by Simbad.
     :param flux_type: Type of flux in the SC mode. Can be either PDCSAP or SAP
-    :return: A TessLightCurve object containing the Light curve of the objectl, validation page if
-    extracted from FFI
+    :param mission: Mission from which the light curves are extracted. By default TESS only is used.
+     You can consider all missions by passing 'all' (TESS, Kepler, K2)
+    :param sigma_clip: Sigma clip parameter. Defines the number of standard deviations that are clipped.
+    :param iters: Iterations for the sigma clipping
+    :return: lightkurve.LightCurve object and validation page if extracted from FFI
     """
     chosen_mission = [mission] if mission != 'all' else ('Kepler', 'K2', 'TESS')
     mprint(f"Searching processed light curves for {target_name} on mission(s) {','.join(chosen_mission)} ... ", log)
-    res = search_lightcurvefile(target_name, mission=chosen_mission)
 
-    if len(res) == 0 and mission in ['TESS', 'all']:
-        mprint(f'No light curve found using light kurve. Checking TESS FFIs ...', log)
-        lc, fig = get_tess_ffi_lc(target_name,sigma_clip,iters)
-    elif len(res) != 0:
+    if chosen_mission == ['TESS']:
+        if target_name.startswith('TIC'):
+            tic_id = re.findall(r'\d+', target_name)
+            if len(tic_id) == 0:
+                raise ValueError(ctext("A Tic ID needs to consist of TIC and a number!", error))
+            tic_id = int(tic_id[0])
+        else:
+            mprint(f"Resolving {target_name} to TIC using MAST ...",log)
+            try:
+                tic_id = Catalogs.query_object(target_name,catalog='TIC',radius=0.003)[0]['ID']
+            except KeyError:
+                raise ValueError(ctext(f"No TESS observations available for {target_name}", error))
+
+            mprint(f"TIC ID for {target_name}: TIC {tic_id}",log)
+
+        o = Observations.query_criteria(objectname=f"TIC {tic_id}", radius=str(0 * u.deg), project='TESS',
+                                        obs_collection='TESS').to_pandas()
+
+        if len(o) > 0 and len(o[o.target_name != 'TESS FFI']) > 0:
+            mprint(f"Short cadence observations available for {target_name}. Downloading ...",info)
+            res = search_lightcurvefile(f"TIC {tic_id}", mission=chosen_mission)
+        else: #Only FFI available
+            mprint(f"No short cadence data available for {target_name}, extracting from FFI ...",info)
+            lc, fig = get_tess_ffi_lc(f"TIC {tic_id}",sigma_clip,iters,do_pca,do_psf,flux_type)
+            mprint(f"Total observation length: {'%.2f' % (lc.time[-1] - lc.time[0])} days.", log)
+            return lc, fig
+    else:
+        res = search_lightcurvefile(target_name, mission=chosen_mission)
+
+    if len(res) != 0:
         fig = None
         mprint(f"Found processed light curve for {target_name}!", info)
         res = res.download_all()
@@ -244,7 +334,7 @@ def download_lc(target_name: str, flux_type='PDCSAP', mission: str = 'all',sigma
             raise ValueError(ctext("Flux type needs to be either PDCSAP or SAP", error))
         lc = combine_light_curves(lc_set)
     else:
-        raise ValueError(ctext(f"No light curve available for {target_name} on mission(s) {chosen_mission}"))
+        raise ValueError(ctext(f"No light curve available for {target_name} on mission(s) {chosen_mission}",error))
 
     mprint(f"Total observation length: {'%.2f' % (lc.time[-1] - lc.time[0])} days.", log)
     return lc, fig
