@@ -58,7 +58,8 @@ def main(args=None):
                         type=str, choices=["scipy", "lmfit"], default="lmfit")
 
     parser.add_argument("-ft", "--fluxType", help="If you input SC Tess observations (TIC IDs), this flag "
-                                                  "allows you to choose between PDCSAP and SAP flux. Default "
+                                                  "allows you to choose between PDCSAP and SAP flux or PSF for long "
+                                                  "cadence data. Default "
                                                   "is PDCSAP",
                         type=str, choices=["PDCSAP", "SAP","PSF"], default="PDCSAP")
 

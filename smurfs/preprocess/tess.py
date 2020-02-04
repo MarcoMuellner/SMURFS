@@ -21,6 +21,7 @@ from astroquery.mast import Observations
 import astropy.units as u
 from matplotlib import rcParams
 import warnings
+from eleanor.visualize import Visualize
 
 params = {
     'axes.labelsize': 16,
@@ -152,7 +153,7 @@ def mag(lc: TessLightCurve) -> TessLightCurve:
     return lc
 
 
-def cut_ffi(tic_id: int,clip :float = 4,iter : int = 1,do_pca : bool = False, do_psf :bool = False,flux_type = 'PDCSAP') -> Tuple[TessLightCurve, List[Figure]]:
+def cut_ffi(target_name: str,tic_id:int,clip :float = 4,iter : int = 1,do_pca : bool = False, do_psf :bool = False,flux_type = 'PDCSAP') -> Tuple[TessLightCurve, List[Figure]]:
     """
     Extracts light curves from FFIs using TESScut and Eleanor. Querying all available sectors for a given TIC ID.
     :param tic_id: ID of the star in the TIC
@@ -163,7 +164,7 @@ def cut_ffi(tic_id: int,clip :float = 4,iter : int = 1,do_pca : bool = False, do
         raise ValueError(mprint(f"Flux type {flux_type} not recognized. Possible values are: {flux_types}",error))
     f = io.StringIO()
     with redirect_stdout(f):
-        stars = eleanor.multi_sectors(tic=tic_id, sectors='all', tc=True)
+        stars = eleanor.multi_sectors(name=target_name, sectors='all',tc=True)
     mprint(f.getvalue().strip(), log)
 
     lc_list = []
@@ -198,7 +199,7 @@ def cut_ffi(tic_id: int,clip :float = 4,iter : int = 1,do_pca : bool = False, do
     return lc, fig
 
 
-def get_tess_ffi_lc(target_name: str,clip :float = 4,iter : int = 1,do_pca : bool= False, do_psf :bool = False,flux_type : str = 'PDCSAP') -> Tuple[TessLightCurve, List[Figure]]:
+def get_tess_ffi_lc(target_name: str,tic_id : int = None,clip :float = 4,iter : int = 1,do_pca : bool= False, do_psf :bool = False,flux_type : str = 'PDCSAP') -> Tuple[TessLightCurve, List[Figure]]:
     """
     Tries to extract a light curve from TESS FFIs. If you do not provide a TIC number, it will try
     to look up the target on Simbad and link it to the TESS catalog using Simbad.
@@ -207,6 +208,8 @@ def get_tess_ffi_lc(target_name: str,clip :float = 4,iter : int = 1,do_pca : boo
     from Simbad to the TIC catalogue.
     :return: A TessLightCurve object containing the Light curve of the object, validation page figure
     """
+    mprint(f"Extracting light curves from FFIs, this may take a bit ... ", log)
+    return cut_ffi(target_name,tic_id,clip,iter,do_pca,do_psf,flux_type)
     if target_name.startswith('TIC'):
         tic_id = re.findall(r'\d+', target_name)
         if len(tic_id) == 0:
@@ -239,8 +242,6 @@ def get_tess_ffi_lc(target_name: str,clip :float = 4,iter : int = 1,do_pca : boo
         tic_id = tic_star['ID']
         mprint(f"Found TESS observations for {target_name} with TIC {tic_id}", info)
 
-    mprint(f"Extracting light curves from FFIs, this may take a bit ... ", log)
-    return cut_ffi(tic_id,clip,iter,do_pca,do_psf,flux_type)
 
 
 def combine_light_curves(target_list: List[Union[TessLightCurve, KeplerLightCurve]],sigma_clip :float = 4,iters : int = 1) -> Union[
@@ -274,7 +275,7 @@ def download_lc(target_name: str, flux_type='PDCSAP', mission: str = 'TESS',sigm
     the mission parameter.
     :param target_name: Name of the target. You can either provide the TIC ID (TIC ...), Kepler ID (KIC ...),
     K2 ID(EPIC ...) or a name that is resolvable by Simbad.
-    :param flux_type: Type of flux in the SC mode. Can be either PDCSAP or SAP
+    :param flux_type: Type of flux in the SC mode. Can be either PDCSAP or SAP or PSF for long cadence data
     :param mission: Mission from which the light curves are extracted. By default TESS only is used.
      You can consider all missions by passing 'all' (TESS, Kepler, K2)
     :param sigma_clip: Sigma clip parameter. Defines the number of standard deviations that are clipped.
@@ -286,6 +287,7 @@ def download_lc(target_name: str, flux_type='PDCSAP', mission: str = 'TESS',sigm
 
     if chosen_mission == ['TESS']:
         if target_name.startswith('TIC'):
+            raise ValueError("Using the TIC ID directly is currently disabled due to a MAST error.")
             tic_id = re.findall(r'\d+', target_name)
             if len(tic_id) == 0:
                 raise ValueError(ctext("A Tic ID needs to consist of TIC and a number!", error))
@@ -299,15 +301,15 @@ def download_lc(target_name: str, flux_type='PDCSAP', mission: str = 'TESS',sigm
 
             mprint(f"TIC ID for {target_name}: TIC {tic_id}",log)
 
-        o = Observations.query_criteria(objectname=f"TIC {tic_id}", radius=str(0 * u.deg), project='TESS',
+        o = Observations.query_criteria(objectname=target_name, radius=str(0 * u.deg), project='TESS',
                                         obs_collection='TESS').to_pandas()
 
         if len(o) > 0 and len(o[o.target_name != 'TESS FFI']) > 0:
             mprint(f"Short cadence observations available for {target_name}. Downloading ...",info)
-            res = search_lightcurvefile(f"TIC {tic_id}", mission=chosen_mission)
+            res = search_lightcurvefile(target_name, mission=chosen_mission)
         else: #Only FFI available
             mprint(f"No short cadence data available for {target_name}, extracting from FFI ...",info)
-            lc, fig = get_tess_ffi_lc(f"TIC {tic_id}",sigma_clip,iters,do_pca,do_psf,flux_type)
+            lc, fig = get_tess_ffi_lc(target_name,tic_id,sigma_clip,iters,do_pca,do_psf,flux_type)
             mprint(f"Total observation length: {'%.2f' % (lc.time[-1] - lc.time[0])} days.", log)
             return lc, fig
     else:
@@ -325,6 +327,10 @@ def download_lc(target_name: str, flux_type='PDCSAP', mission: str = 'TESS',sigm
                 types.append(type)
 
         mprint(f"Using {','.join(types)} observations! Combining sectors ...", log)
+
+        if flux_type == 'PSF':
+            mprint(f"PSF not available for short cadence data. Reverting to PDCSAP",warn)
+            flux_type = 'PDCSAP'
 
         if flux_type == 'PDCSAP':
             lc_set: List[Union[TessLightCurve, KeplerLightCurve]] = [i for i in res.PDCSAP_FLUX.data]

@@ -7,7 +7,7 @@ scipy
 uncertainties
 astroquery
 lightkurve
-eleanor_mamu
+eleanor_mamu==1.0.2
 lmfit
 jupyter
 pyfcomb

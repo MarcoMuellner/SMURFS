@@ -1,10 +1,10 @@
 # Smurfs Documentation
-![SMURFS Image](https://i.imgur.com/wWe1q0y.png)
+![SMURFS Image](https://i.imgur.com/Uh2UhpZ.png)
 
-The **SMURFS** (**SM**art **U**se**R** **F**requency analy**S**er) provides automatic extraction of frequencies from
-a Timeseries data. It provides various interfaces, from a standalone command line tool, to jupyter and python 
-integrations. It also automatically computes possible frequency combinations, directly downloads of TESS/Kepler/K2 
-data and more. 
+**SMURFS** provides a fully automated way to extract frequencies from
+timeseries data sets. It provides various interfaces, from a standalone command line tool, to jupyter and python 
+integrations and computes possible frequency combinations, directly downloads and reduces (if necessary) data 
+of TESS/Kepler/K2 observations and much much more.
 
 ## Getting started
 
