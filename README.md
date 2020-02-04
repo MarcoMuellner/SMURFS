@@ -60,6 +60,15 @@ SMURFS creates a result folder after running the code. In this case it has the f
 The ```LC*.txt``` files contain the light curves, original and residual. The ```PS*.txt``` files contain the 
 original as well as the residual amplitude spectrum. ```_combinations.csv``` shows all combination frequencies for the 
 result and ```_result.csv``` gives the result for a given run.
+
+## Citing
+
+If you use this software in your research, consider citing  it using Zenodo.
+
+
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3635801.svg)](https://doi.org/10.5281/zenodo.3635801)
+
+
  
 ## Documentation
 
