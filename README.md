@@ -65,8 +65,11 @@ result and ```_result.csv``` gives the result for a given run.
 
 If you use this software in your research, consider citing  it using Zenodo.
 
-
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3635801.svg)](https://doi.org/10.5281/zenodo.3635801)
+
+If you use SMURFS to extract LC data from FFIs, you should also cite the awesome people of Eleanor.
+
+[Feinstein et al. 2019](https://ui.adsabs.harvard.edu/abs/2019PASP..131i4502F/abstract)
 
 
  

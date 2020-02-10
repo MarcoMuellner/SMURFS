@@ -61,7 +61,7 @@ def main(args=None):
                                                   "allows you to choose between PDCSAP and SAP flux or PSF for long "
                                                   "cadence data. Default "
                                                   "is PDCSAP",
-                        type=str, choices=["PDCSAP", "SAP","PSF"], default="PDCSAP")
+                        type=str, choices=["PDCSAP", "SAP", "PSF"], default="PDCSAP")
 
     parser.add_argument("-so", "--storeObject", help="If this flag is set, the SMURFS object is stored in the "
                                                      "results. You can later use this object to load the "
@@ -87,14 +87,18 @@ def main(args=None):
     parser.add_argument("-it", "--iters", help="Sets the iterations for the sigma clipping. Default is 1.", type=int,
                         default=1)
 
-    parser.add_argument("-pca","--do_pca",help="Activates the PCA analysis (aperture × TPF + background subtraction + "
-                                               "cotrending basis vectors).Only "
-                                               "applicable to extraction from TESS FFIs",action='store_true')
+    parser.add_argument("-pca", "--do_pca",
+                        help="Activates the PCA analysis (aperture × TPF + background subtraction + "
+                             "cotrending basis vectors).Only "
+                             "applicable to extraction from TESS FFIs", action='store_true')
 
-    parser.add_argument("-psf","--do_psf",help="Activates the PSF analysis. This adds point spread function "
-                                               "modelling to the extraction of light curves from FFIs. Only "
-                                               "applicable to extraction from TESS FFIs",action='store_true')
+    parser.add_argument("-psf", "--do_psf", help="Activates the PSF analysis. This adds point spread function "
+                                                 "modelling to the extraction of light curves from FFIs. Only "
+                                                 "applicable to extraction from TESS FFIs", action='store_true')
 
+    parser.add_argument("-ac", "--apply_corrections",
+                        help="If this flag is set, correctsion (sigma clipping, conversion"
+                             " to magnitude) are applied to files", action='store_true')
 
     """
     #todo replace this
@@ -143,9 +147,12 @@ def main(args=None):
             target = targets[0]
 
             if len(target.split(".")) == 2 and os.path.basename(target).split(".")[1] in ['txt', 'dat']:
-                s = Smurfs(file=target, flux_type=args.fluxType, mission=args.mission,sigma_clip = args.sigmaClip,iters=args.iters,do_pca=args.do_pca,do_psf=args.do_psf)
+                s = Smurfs(file=target, flux_type=args.fluxType, mission=args.mission, sigma_clip=args.sigmaClip,
+                           iters=args.iters, do_pca=args.do_pca, do_psf=args.do_psf,
+                           apply_file_correction=args.apply_corrections)
             else:
-                s = Smurfs(target_name=target, flux_type=args.fluxType, mission=args.mission,sigma_clip = args.sigmaClip,iters=args.iters,do_pca=args.do_pca,do_psf=args.do_psf)
+                s = Smurfs(target_name=target, flux_type=args.fluxType, mission=args.mission, sigma_clip=args.sigmaClip,
+                           iters=args.iters, do_pca=args.do_pca, do_psf=args.do_psf)
 
             improve_fit = args.improveFitMode == 'all'
 

@@ -66,7 +66,7 @@ class Smurfs:
     """
 
     def __init__(self, file=None, time=None, flux=None, target_name=None, flux_type='PDCSAP', label=None,
-                 quiet_flag=False,mission = 'TESS',sigma_clip : float=4,iters :int=1,do_pca : bool=False,do_psf :bool = False):
+                 quiet_flag=False,mission = 'TESS',sigma_clip : float=4,iters :int=1,do_pca : bool=False,do_psf :bool = False, apply_file_correction = False):
         mpr.quiet = quiet_flag
         self.validation_page : Figure= None
         if target_name is not None:
@@ -91,7 +91,7 @@ class Smurfs:
                 mprint("Be aware that the mean of the flux is not 0! This might lead to unintended consequences!",warn)
 
         elif file is not None:
-            self.lc: LightCurve = load_file(file)
+            self.lc: LightCurve = load_file(file,sigma_clip,iters,apply_file_correction)
             if label is None:
                 self.label = os.path.basename(file).split(".")[0]
             else:
@@ -406,18 +406,17 @@ class Smurfs:
                                (self.statistics, '#Statistics'),
                                (frame, '#Result')]
 
-                    with open('_result.csv', 'w') as f:
+                    with open('result.csv', 'w') as f:
                         for fr, comment in df_list:
                             f.write(f"{comment}\n")
                             fr.to_csv(f)
                             f.write("\n\n")
 
-                    self._combinations.to_csv('_    combinations.csv')
-
-                self.lc.to_csv("LC.txt")
+                    self._combinations.to_csv('combinations.csv')
+                self.lc.to_csv("LC.txt",**{'index':False})
                 self.pdg.to_csv("PS.txt")
                 if self._ff is not None:
-                    self._ff.res_lc.to_csv("LC_residual.txt")
+                    self._ff.res_lc.to_csv("LC_residual.txt",**{'index':False})
                     self._ff.res_pdg.to_csv("PS_residual.txt")
 
                 if self._notes is not None:

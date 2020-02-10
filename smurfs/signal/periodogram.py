@@ -121,4 +121,4 @@ class Periodogram(lk_Periodogram):
         :param file: File object
         """
         frame = df.from_dict({'Frequency':self.frequency,'Power':self.power})
-        frame.to_csv(file)
+        frame.to_csv(file,index=False)
