@@ -5,9 +5,12 @@ warn = '7;33;40'
 error = '7;31;40'
 state = '7;34;47'
 
+class Settings:
+    quiet = False
+
 
 def mprint(text: str, type: str):
-    if not quiet:
+    if not Settings.quiet:
         print(f'\x1b[{type}m {text} \x1b[0m')
 
 def ctext(text : str, type : str)->str:

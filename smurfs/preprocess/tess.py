@@ -338,7 +338,7 @@ def download_lc(target_name: str, flux_type='PDCSAP', mission: str = 'TESS',sigm
             lc_set: List[Union[TessLightCurve, KeplerLightCurve]] = [i for i in res.SAP_FLUX.data]
         else:
             raise ValueError(ctext("Flux type needs to be either PDCSAP or SAP", error))
-        lc = combine_light_curves(lc_set)
+        lc = combine_light_curves(lc_set,sigma_clip=sigma_clip,iters=iters)
     else:
         raise ValueError(ctext(f"No light curve available for {target_name} on mission(s) {chosen_mission}",error))
 

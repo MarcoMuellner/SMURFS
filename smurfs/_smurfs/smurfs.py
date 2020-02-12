@@ -67,7 +67,7 @@ class Smurfs:
 
     def __init__(self, file=None, time=None, flux=None, target_name=None, flux_type='PDCSAP', label=None,
                  quiet_flag=False,mission = 'TESS',sigma_clip : float=4,iters :int=1,do_pca : bool=False,do_psf :bool = False, apply_file_correction = False):
-        mpr.quiet = quiet_flag
+        Settings.quiet = quiet_flag
         self.validation_page : Figure= None
         if target_name is not None:
             self.lc, self.validation_page = download_lc(target_name, flux_type,mission,sigma_clip,iters,do_pca,do_psf)
@@ -309,7 +309,7 @@ class Smurfs:
 
         self.res_lc = self._ff.res_lc
 
-        print(f'\x1b[7;32;40m {self.label} Analysis done! \x1b[0m')
+        mprint(f"{self.label} Analysis done!",info)
 
     def improve_result(self):
         """
@@ -456,7 +456,7 @@ class Smurfs:
                     for fig in self.validation_page:
                         pl.close(fig)
 
-        print(f'\x1b[7;32;40m {self.label} Data saved! \x1b[0m')
+        mprint(f"{self.label} Data saved!",info)
 
     @staticmethod
     def from_path(path: str):
