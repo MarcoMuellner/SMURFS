@@ -21,16 +21,16 @@ def testFrequency(value):
     f = Frequency(x,y,4,2)
     f.pre_whiten(mode='scipy')
 
-    assert np.abs(f.amp.nominal_value - value[1][0]) < 4*f.amp.std_dev
-    assert np.abs(f.f.nominal_value - value[1][1]) < 4*f.f.std_dev
-    assert np.abs(f.phase.nominal_value - value[1][2]) < 8*f.phase.std_dev
+    assert np.abs(f.amp.nominal_value - value[1][0]) < 4 * f.amp.std_dev
+    assert np.abs(f.f.nominal_value - value[1][1]) < 4 * f.f.std_dev
+    assert np.abs(f.phase.nominal_value - value[1][2]) < 8 * f.phase.std_dev
 
     f = Frequency(x, y, 4, 2)
     f.pre_whiten(mode='lmfit')
 
-    assert np.abs(f.amp.nominal_value - value[1][0]) < 8*f.amp.std_dev
-    assert np.abs(f.f.nominal_value - value[1][1]) < 8*f.f.std_dev
+    assert np.abs(f.amp.nominal_value - value[1][0]) < 8 * f.amp.std_dev
+    assert np.abs(f.f.nominal_value - value[1][1]) < 8 * f.f.std_dev
     try:
-        assert np.abs(f.phase.nominal_value - value[1][2]) < 8*f.phase.std_dev
+        assert np.abs(f.phase.nominal_value - value[1][2]) < 8 * f.phase.std_dev
     except AssertionError:
-        assert np.abs(f.phase.nominal_value - (value[1][2]+2*np.pi)) < 8*f.phase.std_dev
+        assert np.abs(f.phase.nominal_value - (value[1][2] + 2 * np.pi)) < 8 * f.phase.std_dev

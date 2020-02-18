@@ -23,7 +23,7 @@ The three parameter in this call are the absolute minimum you need to provide fo
 - **Second parameter**: The second parameter represents the lower bound of the Signal to Noise Ratio (SNR). SMURFS
   understands the SNR as the ratio between the amplitude of an individual frequency and its surrounding
   *background noise*. More on that below.
-- **Third paramaeter**: Lastly, the third parameter represents the window size considered by SMURF when computing
+- **Third parameter**: Lastly, the third parameter represents the window size considered by SMURF when computing
   the SNR of any given frequency. Again, more on this parameter below.
 
 So now that you have your analysis running, you should find the following output in your terminal:
@@ -76,5 +76,5 @@ interested in all possible parameters, when using SMURFS as a stand alone produc
 :ref:`standalone settings page <Standalone settings>`. You can also take a look at the various examples, that
 are provided with this documentation. Alternatively, if you want to embed SMURFS in your code, you should check the
 API page, as well as the examples for such use cases. You can also take a look at the
-:ref:`inner workings page <Inner workings>`, to give you an idea how SMURFS actually performs its task.
+:ref:`internals page <Internals>`, to give you an idea how SMURFS actually performs its task.
 

@@ -6,9 +6,10 @@ import matplotlib.pyplot as pl
 from matplotlib.axes import Axes
 from uncertainties.core import AffineScalarFunc
 from lmfit import Model
-from typing import Union, List, Tuple
+from typing import Union, List, Tuple, TYPE_CHECKING
 from pandas import DataFrame as df
 import astropy.units as u
+from uncertainties.core import Variable
 
 from smurfs.signal.periodogram import Periodogram
 from smurfs.support.mprint import *
@@ -82,9 +83,9 @@ class Frequency:
     def __init__(self, time: np.ndarray, flux: np.ndarray, window_size: float, snr: float, flux_err: np.ndarray = None,
                  f_min: float = None, f_max: float = None, rm_ranges: List[Tuple[float]] = None):
         if flux_err is None:
-            self.lc = LightCurve(time, flux)
+            self._lc = LightCurve(time, flux)
         else:
-            self.lc = LightCurve(time, flux, flux_err=flux_err)
+            self._lc = LightCurve(time, flux, flux_err=flux_err)
 
         self.flux_error = flux_err
         self.pdg: Periodogram = Periodogram.from_lightcurve(self.lc, f_min, f_max, remove_ranges=rm_ranges)
@@ -93,11 +94,73 @@ class Frequency:
 
         self.find_adjacent_minima()
 
-        self.amp = np.nan
-        self.f = np.nan
-        self.phase = np.nan
-        self.significant = self.snr > snr
-        self.label = ""
+        self._amp = np.nan
+        self._f = np.nan
+        self._phase = np.nan
+        self._significant = self.snr > snr
+        self._label = ""
+
+    @property
+    def amp(self) -> Union[float,Variable]:
+        """
+        Returns the amplitude of the found frequency (in mag)
+        """
+        return self._amp
+
+    @amp.setter
+    def amp(self,value : Union[float,Variable]):
+        self._amp = value
+
+    @property
+    def f(self) -> Union[float,Variable]:
+        """
+        Returns the frequency of the found frequency (in c/d)
+        """
+        return self._f
+
+    @f.setter
+    def f(self,value : Union[float,Variable]):
+        self._f = value
+
+    @property
+    def phase(self) -> Union[float,Variable]:
+        """
+        Returns the phase of the found frequency (between 0 and 1)
+        """
+        return self._phase
+
+    @phase.setter
+    def phase(self,value : Union[float,Variable]):
+        self._phase = value
+
+    @property
+    def significant(self) -> bool:
+        """
+        Returns the significance of the frequency. True --> significant, False --> insignificant
+        """
+        return self._significant
+
+    @significant.setter
+    def significant(self,value :bool):
+        self._significant = value
+
+    @property
+    def label(self) -> str:
+        """
+        Returns the label of the found frequency
+        """
+        return self._label
+
+    @label.setter
+    def label(self,value : str):
+        self._label = value
+
+    @property
+    def lc(self) -> LightCurve:
+        """
+        Represents the light curve on which the analysis is performed
+        """
+        return self._lc
 
     @property
     def snr(self) -> float:
@@ -209,9 +272,9 @@ class Frequency:
         ax: Axes = self.pdg.plot(ax=ax, ylabel='Amplitude', color='k')
         pwr = self.pdg.max_power / self.snr
 
-        if isinstance(self.f, AffineScalarFunc) and not use_guess:
-            f = self.f.nominal_value
-            f_str = f'Fit: {self.f} {self.pdg.frequency_at_max_power.unit}'
+        if isinstance(self._f, AffineScalarFunc) and not use_guess:
+            f = self._f.nominal_value
+            f_str = f'Fit: {self._f} {self.pdg.frequency_at_max_power.unit}'
             color = 'red'
         else:
             f = self.pdg.frequency_at_max_power.value
@@ -335,7 +398,7 @@ class FFinder:
                               rm_ranges=self.rm_ranges)
 
                 # check significance of frequency
-                if not f.significant:
+                if not f._significant:
                     if extensions >= extend_frequencies:
                         mprint(f"Stopping extraction after {len(result)} frequencies.", warn)
                         break
@@ -348,7 +411,7 @@ class FFinder:
                 lc = f.pre_whiten(mode)
                 res_noise = np.mean(lc.flux)
 
-                f.label = f"F{len(result)}"
+                f._label = f"F{len(result)}"
 
                 mprint(f"F{len(result)}   {f.f} {f_u}   {f.amp} {a_u}   {f.phase}   {f.snr} ", state)
 
@@ -361,7 +424,7 @@ class FFinder:
 
                 # check for similarity of last 10 frequencies
                 if len(result) > 10:
-                    f_list = unp.nominal_values([i.f for i in result])[-10:]
+                    f_list = unp.nominal_values([i._f for i in result])[-10:]
                     stdDev = f_list.std()
                     if stdDev < 0.05 and skip_similar:
                         mprint(f"Last 10 frequencies where too similar. Skipping region between "
@@ -460,7 +523,7 @@ class FFinder:
         """
         models = []
         for f in result:
-            m = Model(sin, prefix=f.label)
+            m = Model(sin, prefix=f._label)
 
             m.set_param_hint(f.label + 'amp', value=f.amp.nominal_value, min=0.8 * f.amp.nominal_value,
                              max=1.2 * f.amp.nominal_value)
@@ -477,7 +540,7 @@ class FFinder:
             fit_result = model.fit(self.lc.flux, x=self.lc.time)
 
         for f in result:
-            sigma_amp, sigma_f, sigma_phi = m_od_uncertainty(self.lc, fit_result.values[f.label + 'amp'])
+            sigma_amp, sigma_f, sigma_phi = m_od_uncertainty(self.lc, fit_result.values[f._label + 'amp'])
             f.amp = ufloat(fit_result.values[f.label + 'amp'], sigma_amp)
             f.f = ufloat(fit_result.values[f.label + 'f'], sigma_f)
             f.phase = ufloat(fit_result.values[f.label + 'phase'], sigma_phi)
@@ -508,7 +571,7 @@ class FFinder:
         params = []
 
         for f in result:
-            if not f.significant and not use_insignificant:
+            if not f._significant and not use_insignificant:
                 continue
 
             params.append(f.amp.nominal_value)

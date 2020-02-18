@@ -12,12 +12,18 @@ You can use SMURFS both integrated in your code, as well as a stand-alone produc
 :ref:`installation page <Installation and requirements>`, you can take a look at the
 :ref:`quickstart page <Quickstart>`, which gives you the easiest possible example on how to use SMURFS.
 For more detail on the usage as a stand-alone product, :ref:`standalone settings page<Standalone settings>`. For more
-information on what SMURFS is all about, check the :ref:`About SMURFS page<About SMURFS>`.
+information on what SMURFS is all about, check the :ref:`About SMURFS page<About SMURFS>`. SMURFS also gives you
+an interactive mod to work with SMURFS. Its basic usage is described in the
+:ref:`Interactive Mode page<Interactive Mode>`.
 
-After this, you might be interested on how SMURFS actually works. A good starting point here are the various
-class documentations, that give you a full documentation of the necessary classes to start a SMURFS run. They describe
-each class in detail. The :ref:`Internals page<Internals>` also gives you some details on how SMURFS
-internally works.
+
+After this, you might be interested on how SMURFS actually works. A good starting point is the
+:ref:`Internals page<Internals>`, which shows you how SMURFS gets to its result. It should also give you a basic
+idea on the different classes. The most important ones are described in the various class documentation pages, which
+documents all the different classes.
+
+SMURFS also allows you for vastly more advanced usage of its internals. The advanced examples page shows you some
+of those in jupyter notebooks. However, you can apply the same procedures in the interactive mode.
 
 .. toctree::
    :maxdepth: 1
@@ -26,17 +32,23 @@ internally works.
    getting_started/about
    getting_started/installation
    getting_started/quickstart
+   getting_started/interactive_mode
    getting_started/terminal
 
 .. toctree::
    :maxdepth: 1
    :caption: Important classes
 
+   class_doc/inner_workings
+   class_doc/data_download
    class_doc/smurfs
    class_doc/ffinder
    class_doc/frequency
    class_doc/periodogram
-   class_doc/inner_workings.rst
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Advanced examples
 
 .. toctree::
    :maxdepth: 1

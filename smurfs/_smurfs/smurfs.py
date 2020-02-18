@@ -58,6 +58,7 @@ class Smurfs:
     3) Set *file*: Needs to be an ASCII file containing time and flux
 
     Either can be used. 1) and 2) will be automatically sigma clipped and converted to magnitude.
+
     :param file: ASCII file containing time and flux
     :param time: time column of the light curve
     :param flux: flux column of the light curve

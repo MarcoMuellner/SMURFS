@@ -21,4 +21,5 @@ First off, create a virtual environment
 Install smurfs through pip
 
 .. code-block:: bash
+
    pip install smurfs
