@@ -20,7 +20,8 @@ an interactive mod to work with SMURFS. Its basic usage is described in the
 After this, you might be interested on how SMURFS actually works. A good starting point is the
 :ref:`Internals page<Internals>`, which shows you how SMURFS gets to its result. It should also give you a basic
 idea on the different classes. The most important ones are described in the various class documentation pages, which
-documents all the different classes.
+documents all the different classes. If you are interested on how SMURFS downloads data sets and reduces them, check
+the :ref:`downloads page<Downloading and reducing data>`.
 
 SMURFS also allows you for vastly more advanced usage of its internals. The advanced examples page shows you some
 of those in jupyter notebooks. However, you can apply the same procedures in the interactive mode.
@@ -50,9 +51,8 @@ of those in jupyter notebooks. However, you can apply the same procedures in the
    :maxdepth: 1
    :caption: Advanced examples
 
-.. toctree::
-   :maxdepth: 1
-   :caption: Examples
+   examples/downloading_data
+   examples/plotting_things
 
 Index and search function
 -------------------------

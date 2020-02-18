@@ -1,4 +1,4 @@
-from lightkurve import LightCurve
+import lightkurve as lk
 import numpy as np
 from scipy.optimize import curve_fit
 from uncertainties import ufloat, unumpy as unp
@@ -12,6 +12,7 @@ import astropy.units as u
 from uncertainties.core import Variable
 
 from smurfs.signal.periodogram import Periodogram
+from smurfs.signal.lightcurve import LightCurve
 from smurfs.support.mprint import *
 
 
@@ -83,9 +84,9 @@ class Frequency:
     def __init__(self, time: np.ndarray, flux: np.ndarray, window_size: float, snr: float, flux_err: np.ndarray = None,
                  f_min: float = None, f_max: float = None, rm_ranges: List[Tuple[float]] = None):
         if flux_err is None:
-            self._lc = LightCurve(time, flux)
+            self._lc = LightCurve(lk.LightCurve(time, flux))
         else:
-            self._lc = LightCurve(time, flux, flux_err=flux_err)
+            self._lc = LightCurve(lk.LightCurve(time, flux, flux_err=flux_err))
 
         self.flux_error = flux_err
         self.pdg: Periodogram = Periodogram.from_lightcurve(self.lc, f_min, f_max, remove_ranges=rm_ranges)
@@ -257,7 +258,7 @@ class Frequency:
         else:
             raise ValueError("Unknown fit mode")
 
-        return LightCurve(self.lc.time, self.lc.flux - sin(self.lc.time, *param))
+        return LightCurve(lk.LightCurve(self.lc.time, self.lc.flux - sin(self.lc.time, *param)))
 
     def plot(self, ax: Axes = None, show=False, use_guess=False) -> Union[None, Axes]:
         """
@@ -579,9 +580,9 @@ class FFinder:
             params.append(f.phase.nominal_value)
 
         try:
-            return LightCurve(self.lc.time, self.lc.flux - sin_multiple(self.lc.time, *params))
+            return LightCurve(lk.LightCurve(self.lc.time, self.lc.flux - sin_multiple(self.lc.time, *params)))
         except u.UnitConversionError:
-            return LightCurve(self.lc.time, self.lc.flux - sin_multiple(self.lc.time, *params)*self.lc.flux.unit)
+            return LightCurve(lk.LightCurve(self.lc.time, self.lc.flux - sin_multiple(self.lc.time, *params)*self.lc.flux.unit))
 
     def improve_result(self):
         """

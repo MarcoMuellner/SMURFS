@@ -17,3 +17,4 @@ sphinx-argparse
 recommonmark
 sphinx_rtd_theme
 tess-point>=0.3.8
+nbsphinx

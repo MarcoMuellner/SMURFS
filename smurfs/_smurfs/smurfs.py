@@ -5,7 +5,7 @@ if not sys.warnoptions:
 
     warnings.simplefilter("ignore")
 
-from lightkurve import LightCurve, TessLightCurve
+import lightkurve as lk
 import matplotlib.pyplot as pl
 import numpy as np
 from pandas import DataFrame as df
@@ -24,6 +24,7 @@ from smurfs.preprocess.tess import download_lc
 from smurfs.preprocess.file import load_file
 from smurfs._smurfs.frequency_finder import FFinder, sin_multiple
 from smurfs.signal.periodogram import Periodogram
+from smurfs.signal.lightcurve import LightCurve
 from smurfs.support.support import cd
 import smurfs.support.mprint as mpr
 from smurfs.support.mprint import *
@@ -83,7 +84,7 @@ class Smurfs:
 
         elif time is not None and flux is not None:
             mprint("Creating light curve object from time and flux input.", log)
-            self.lc: LightCurve = LightCurve(time=time, flux=flux)
+            self.lc: LightCurve = LightCurve(lk.LightCurve(time=time, flux=flux))
             if label is None:
                 self.label = 'LC'
             else:
@@ -329,7 +330,7 @@ class Smurfs:
         self.res_lc = self._ff.res_lc
 
 
-    def plot_lc(self, show=False, **kwargs):
+    def plot_lc(self, show=False, result = None, **kwargs):
         """
         Plots the light curve. If a result is already computed, it also plots the resulting model
 
@@ -342,14 +343,16 @@ class Smurfs:
             except KeyError:
                 pass
 
-        ax: Axes = self.lc.scatter(color='k', ylabel="Flux [mag]", normalize=False, **kwargs)
-        ax.set_ylim(ax.get_ylim()[::-1])
-        if len(self._result) > 0:
+        ax: Axes = self.lc.scatter()
+
+        model = result if result is not None and len(result) >0 else self.result
+
+        if len(model) > 0:
             params = []
 
-            for i, j, k in zip(self._result[self._result.significant==True].amp
-                    , self._result[self._result.significant==True].frequency
-                    , self._result[self._result.significant==True].phase):
+            for i, j, k in zip(model[self._result.significant==True].amp
+                    , model[self._result.significant==True].frequency
+                    , model[self._result.significant==True].phase):
                 params.append(i.nominal_value)
                 params.append(j.nominal_value)
                 params.append(k.nominal_value)
@@ -442,7 +445,7 @@ class Smurfs:
                 for obj, name in images:
                     fig, ax = pl.subplots(figsize=(16, 10))
                     if isinstance(obj, LightCurve):
-                        obj.scatter(ax=ax, color='k', normalize=False)
+                        obj.scatter(ax=ax)
                     else:
                         obj.plot(ax=ax, markersize=2)
                     pl.tight_layout()
