@@ -11,7 +11,9 @@ import numpy as np
 from pandas import DataFrame as df
 import os
 import pickle
-from pyfcomb import get_combinations
+on_rtd = os.environ.get('READTHEDOCS') == 'True'
+if not on_rtd:
+    from pyfcomb import get_combinations
 from uncertainties import unumpy as unp
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure

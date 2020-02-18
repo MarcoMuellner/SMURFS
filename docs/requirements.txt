@@ -12,7 +12,6 @@ lightkurve
 eleanor_mamu==1.0.2
 lmfit
 jupyter
-pyfcomb
 sphinx
 sphinx-argparse
 recommonmark
