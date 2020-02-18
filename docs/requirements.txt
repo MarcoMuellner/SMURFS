@@ -12,7 +12,7 @@ lightkurve
 eleanor_mamu==1.0.2
 lmfit
 jupyter
-sphinx
+Sphinx==2.3.1
 sphinx-argparse
 recommonmark
 sphinx_rtd_theme

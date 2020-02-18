@@ -1,5 +1,5 @@
 smurfs.Frequency
 ================
 
-.. autoclass:: smurfs.FFinder
+.. autoclass:: smurfs.Frequency
    :members:
