@@ -64,7 +64,6 @@ class Smurfs:
     :param label: Optional label for the star. Results will be saved under this name
     :param quiet_flag: Quiets Smurfs (no more print message will be piped to stdout)
     """
-
     def __init__(self, file=None, time=None, flux=None, target_name=None, flux_type='PDCSAP', label=None,
                  quiet_flag=False,mission = 'TESS',sigma_clip : float=4,iters :int=1,do_pca : bool=False,do_psf :bool = False, apply_file_correction = False):
         Settings.quiet = quiet_flag
@@ -487,7 +486,7 @@ class Smurfs:
         :return: 3 pandas dataframes, settings, statistics and results
         """
 
-        if not os.path.exists(path) or not path.endswith("_result.csv"):
+        if not os.path.exists(path) or not path.endswith("result.csv"):
             raise IOError("You need to provide the exact path to the results file")
 
         with open(path,'r') as f:

@@ -36,7 +36,9 @@ extensions = [
     'sphinx.ext.viewcode',
     'sphinx.ext.autodoc',
     'sphinx.ext.intersphinx',
-    'recommonmark'
+    'recommonmark',
+    'sphinx.ext.autosectionlabel',
+    'sphinxarg.ext'
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -83,7 +85,7 @@ def setup(app):
         'enable_math': True,
         'enable_inline_math': True,
         'enable_eval_rst': True,
-        'enable_auto_doc_ref': True,
+        'enable_auto_toc_tree': True,
     }, True)
     app.add_transform(AutoStructify)
 

@@ -11,7 +11,8 @@ eleanor_mamu==1.0.2
 lmfit
 jupyter
 pyfcomb
-Sphinx
+sphinx
+sphinx-argparse
 recommonmark
 sphinx_rtd_theme
 tess-point>=0.3.8
