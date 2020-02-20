@@ -22,8 +22,8 @@ it normalizes the light curve around zero by removing the median in the data and
 by default. You can change this behaviour through the appropriate settings in the standalone version, or by setting
 the parameters in the :meth:`smurfs.Smurfs` class.
 
-LC data
--------
+LC data download
+----------------
 
 Seeing as the vast majority of targets in TESS are observed in the LC mode, SMURFS also provides a very simple way
 to access these targets. It makes heavy use of the `eleanor <https://github.com/afeinstein20/eleanor>`_ pipeline.
@@ -35,3 +35,29 @@ by checking apertures that have shown to work well with Kepler data. From there,
 from the light curve, and if the PSA flag is set (which is on by default), it applies co-trending basis vectors
 to further improve the data. SMURFS also provides a validation page for each LC target, showing you how the
 extraction worked.
+
+Using internal functions
+------------------------
+
+While the interface of SMURFS is designed to be as convenient as possible, you can also choose to use the internal
+functions to download data and load files. To make the code do the work, you can simply use
+:meth:`smurfs.preprocess.tess.download_lc`. It has a very similar interface to the normal :meth:`smurfs.Smurfs` class.
+
+If you are interested only in the LC data of a given target (seeing as SMURFS always uses SC data if available), you
+can also use the :meth:`smurfs.preprocess.tess.cut_ffi` function. You need the TIC id of the target to run this
+function. If you don't have it, you can get it using this simple snippet:
+
+.. code-block:: python
+
+    from astroquery.mast import Catalogs
+
+    Catalogs.query_object(target_name,catalog='TIC',radius=0.003)[0]['ID']
+
+If you are interested in the different observations that exist in MAST for a given target, you can use
+
+.. code-block:: python
+
+    from astroquery.mast import Observations
+
+    Observations.query_criteria(objectname=target_name, radius=str(0 * u.deg), project='TESS',
+                                        obs_collection='TESS')

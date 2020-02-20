@@ -20,9 +20,9 @@ def sin(x: np.ndarray, amp: float, f: float, phase: float) -> np.ndarray:
     """
     Sinus function, used for fitting.
 
-    :param x: Time axis
-    :param amp: amplitude
-    :param f: frequency
+    :param x: Time axis, days
+    :param amp: amplitude, mag
+    :param f: frequency, c/d
     :param phase: phase, normed to 1
     """
     return amp * np.sin(2. * np.pi * (f * x + phase))
@@ -30,7 +30,7 @@ def sin(x: np.ndarray, amp: float, f: float, phase: float) -> np.ndarray:
 
 def sin_multiple(x: np.ndarray, *params) -> np.ndarray:
     """
-    Multiple sinii summed up
+    Multiple sinuses summed up
 
     :param x: Time axis
     :param params: Params, see *sin* for signature
@@ -46,7 +46,7 @@ def m_od_uncertainty(lc: LightCurve, a: float) -> Tuple:
     """
     Computes uncertainty for a given light curve according to Montgomery & O'Donoghue (1999).
 
-    :param lc: Lightcurve object
+    :param lc: :meth:`smurfs.Lightcurve` object
     :param a: amplitude of the frequency
     :return: A tuple of uncertainties in this order: Amplitude, frequency, phase
     """
@@ -78,7 +78,7 @@ class Frequency:
     :param flux_err: Error in the flux
     :param f_min: Lower end of the frequency range considered. If None, it uses 0
     :param f_max: Upper end of the frequency range considered. If None, it uses the Nyquist frequency
-    :param rm_ranges: Ranges of frequencies, that should be ignored
+    :param rm_ranges: Ranges of frequencies, that should be ignored (List of tuples, that contain a f_min -> f_max range. These areas are ignored)
     """
 
     def __init__(self, time: np.ndarray, flux: np.ndarray, window_size: float, snr: float, flux_err: np.ndarray = None,
@@ -102,36 +102,36 @@ class Frequency:
         self._label = ""
 
     @property
-    def amp(self) -> Union[float,Variable]:
+    def amp(self) -> Union[float, Variable]:
         """
         Returns the amplitude of the found frequency (in mag)
         """
         return self._amp
 
     @amp.setter
-    def amp(self,value : Union[float,Variable]):
+    def amp(self, value: Union[float, Variable]):
         self._amp = value
 
     @property
-    def f(self) -> Union[float,Variable]:
+    def f(self) -> Union[float, Variable]:
         """
         Returns the frequency of the found frequency (in c/d)
         """
         return self._f
 
     @f.setter
-    def f(self,value : Union[float,Variable]):
+    def f(self, value: Union[float, Variable]):
         self._f = value
 
     @property
-    def phase(self) -> Union[float,Variable]:
+    def phase(self) -> Union[float, Variable]:
         """
         Returns the phase of the found frequency (between 0 and 1)
         """
         return self._phase
 
     @phase.setter
-    def phase(self,value : Union[float,Variable]):
+    def phase(self, value: Union[float, Variable]):
         self._phase = value
 
     @property
@@ -142,7 +142,7 @@ class Frequency:
         return self._significant
 
     @significant.setter
-    def significant(self,value :bool):
+    def significant(self, value: bool):
         self._significant = value
 
     @property
@@ -153,7 +153,7 @@ class Frequency:
         return self._label
 
     @label.setter
-    def label(self,value : str):
+    def label(self, value: str):
         self._label = value
 
     @property
@@ -177,7 +177,7 @@ class Frequency:
         outside = np.mean(self.pdg.power[self.snr_mask])
         return (self.pdg.max_power / outside).value  # No quantitiy needed here
 
-    def scipy_fit(self):
+    def scipy_fit(self) -> Tuple[Variable,Variable,Variable,Tuple[float,float,float]]:
         """
         Performs a scipy fit on the light curve of the object. Limits are 50% up and down from the initial guess.
         Computes uncertainties using the provided covariance matrix from curve_fit.
@@ -207,7 +207,7 @@ class Frequency:
 
         return ufloat(popt[0], perr[0]), ufloat(popt[1], perr[0]), ufloat(popt[2], perr[0]), popt
 
-    def lmfit_fit(self):
+    def lmfit_fit(self) -> Tuple[Variable,Variable,Variable,List[float]]:
         """
         Uses lmfit to perform the sin fit on the light curve. We first fit all three free parameters, and then vary
         the phase parameter, to get a more accurate value for it. Uncertainties are computed according to
@@ -250,6 +250,7 @@ class Frequency:
 
         :param mode:'scipy' or 'lmfit'
         :return: Pre-whitened lightcurve object
+
         """
         if mode == 'scipy':
             self.amp, self.f, self.phase, param = self.scipy_fit()
@@ -351,7 +352,7 @@ class FFinder:
                f"{self.periodogramm.frequency[-1].round(2)}", log)
 
     def run(self, snr: float = 4, window_size: float = 2, skip_similar: bool = False, similar_chancel=True,
-            extend_frequencies: int = 0, improve_fit=True, mode='lmfit'):
+            extend_frequencies: int = 0, improve_fit=True, mode='lmfit') -> df:
         """
         Starts the frequency extraction from a light curve. In general, it always uses the frequency of maximum power
         and removes it from the light curve. In general, this process is repeated until we reach a frequency that
@@ -421,7 +422,7 @@ class FFinder:
 
                 if improve_fit:
                     result = self._improve_fit(result, mode=mode)
-                    lc = self._res_lc_from_model(result,True)
+                    lc = self._res_lc_from_model(result, True)
 
                 # check for similarity of last 10 frequencies
                 if len(result) > 10:
@@ -458,10 +459,10 @@ class FFinder:
         :param kwargs: kwargs for Periodogram.plot
         """
         if 'color' in kwargs.keys():
-            color=kwargs['color']
+            color = kwargs['color']
             del kwargs['color']
         else:
-            color='grey'
+            color = 'grey'
 
         ax: Axes = self.periodogramm.plot(ax=ax, color=color, ylabel='Amplitude [mag]', **kwargs)
 
@@ -481,7 +482,7 @@ class FFinder:
             y_max = (np.abs(ax.get_ylim()[0]) + a) / (ax.get_ylim()[1] - ax.get_ylim()[0])
 
             ax.axvline(x=f, ymin=y_min, ymax=y_max, color='k')
-            ax.annotate(f'f{i[0]+1}', (f, a))
+            ax.annotate(f'f{i[0] + 1}', (f, a))
 
         if show:
             pl.show()
@@ -515,7 +516,7 @@ class FFinder:
             r.phase = vals[2]
         return result
 
-    def _lmfit_fit(self, result: List[Frequency]):
+    def _lmfit_fit(self, result: List[Frequency]) -> List[Frequency]:
         """
         Performs a combination fit for all found frequencies using *lmfit*.
 
@@ -563,7 +564,7 @@ class FFinder:
         else:
             raise ValueError(f"Fitting mode '{mode}' not available.")
 
-    def _res_lc_from_model(self, result: List[Frequency],use_insignificant = False) -> LightCurve:
+    def _res_lc_from_model(self, result: List[Frequency], use_insignificant=False) -> LightCurve:
         """
         Removes the model from the original light curve, giving the residual
         :param result: List of Frequency objects
@@ -582,9 +583,10 @@ class FFinder:
         try:
             return LightCurve(lk.LightCurve(self.lc.time, self.lc.flux - sin_multiple(self.lc.time, *params)))
         except u.UnitConversionError:
-            return LightCurve(lk.LightCurve(self.lc.time, self.lc.flux - sin_multiple(self.lc.time, *params)*self.lc.flux.unit))
+            return LightCurve(
+                lk.LightCurve(self.lc.time, self.lc.flux - sin_multiple(self.lc.time, *params) * self.lc.flux.unit))
 
-    def improve_result(self):
+    def improve_result(self) -> df:
         """
         Improves the result by fitting the combined result to the original light curve
         """

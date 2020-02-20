@@ -25,9 +25,11 @@ References and links
 --------------------
 Of course, SMURFS wasn't built in a vacuum. Check out these amazing packages on which SMURFS is built on:
 
-- **`Lightkurve <https://docs.lightkurve.org/>`_**: Lightkurve is the heart and soul of all time series/periodogram
+- `Lightkurve <https://docs.lightkurve.org/>`_: Lightkurve is the heart and soul of all time series/periodogram
   objects in SMURFS. Therefore you can use the whole Lightkurve API on these types of objects
-  (for example: *Smurfs.lc*, *Smurfs.pdg*).`Here <https://docs.lightkurve.org/api/lightkurve.lightcurve.LightCurve.html#lightkurve.lightcurve.LightCurve>`_
+  (for example: *Smurfs.lc*, *Smurfs.pdg*).
+  `Here <https://docs.lightkurve.org/api/lightkurve.lightcurve.LightCurve.html#lightkurve.lightcurve.LightCurve>`_
   is a link to the API for LightCurve objects for example.
-- **`Eleanor <https://github.com/afeinstein20/eleanor>`_**: Eleanor is a python package, that allows for extraction
+
+- `Eleanor <https://github.com/afeinstein20/eleanor>`_: Eleanor is a python package, that allows for extraction
   of long cadence light curves from TESS FFIs.

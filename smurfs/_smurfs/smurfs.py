@@ -26,7 +26,6 @@ from smurfs._smurfs.frequency_finder import FFinder, sin_multiple
 from smurfs.signal.periodogram import Periodogram
 from smurfs.signal.lightcurve import LightCurve
 from smurfs.support.support import cd
-import smurfs.support.mprint as mpr
 from smurfs.support.mprint import *
 from uncertainties import ufloat_fromstr
 import matplotlib.backends.backend_pdf

@@ -8,7 +8,7 @@ with open("requirements.txt", "r") as fh:
 
 setuptools.setup(
     name="smurfs",
-    version="1.1.5",
+    version="1.1.6",
     author="Marco Müllner",
     author_email="muellnermarco@gmail.com",
     description="Smart UseR Frequency analySer, a fast and easy to use frequency analyser.",
@@ -20,7 +20,6 @@ setuptools.setup(
     classifiers=[
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
-        "Programming Language :: Python :: 3.8",
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],

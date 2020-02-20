@@ -12,6 +12,7 @@ lmfit
 jupyter
 pyfcomb
 sphinx
+sphinx-autodoc-typehints
 sphinx-argparse
 recommonmark
 sphinx_rtd_theme

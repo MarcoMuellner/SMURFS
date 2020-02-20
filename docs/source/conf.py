@@ -13,6 +13,7 @@
 import os
 import sys
 from recommonmark.transform import AutoStructify
+from smurfs.__version__ import __version__
 sys.path.insert(0, os.path.abspath(os.path.join("..","..")))
 sys.setrecursionlimit(1500)
 
@@ -23,7 +24,7 @@ copyright = '2019, Marco Müllner'
 author = 'Marco Müllner'
 
 # The full version, including alpha/beta/rc tags
-release = '0.6.0'
+release = __version__
 
 
 # -- General configuration ---------------------------------------------------
@@ -35,6 +36,7 @@ extensions = [
     'sphinx.ext.todo',
     'sphinx.ext.viewcode',
     'sphinx.ext.autodoc',
+    'sphinx_autodoc_typehints',
     'sphinx.ext.intersphinx',
     'recommonmark',
     'sphinx.ext.autosectionlabel',
@@ -76,6 +78,8 @@ source_suffix = {
     '.txt': 'markdown',
     '.md': 'markdown',
 }
+
+autodoc_member_order = 'bysource'
 
 github_doc_root = 'https://github.com/MarcoMuellner/SMURFS/tree/master/docs'
 

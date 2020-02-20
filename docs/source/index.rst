@@ -46,6 +46,7 @@ of those in jupyter notebooks. However, you can apply the same procedures in the
    class_doc/ffinder
    class_doc/frequency
    class_doc/periodogram
+   class_doc/other_functions
 
 .. toctree::
    :maxdepth: 1

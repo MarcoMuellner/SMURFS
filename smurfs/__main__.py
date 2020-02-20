@@ -29,21 +29,22 @@ def get_parser():
                                        "for light kurves of this object.If you choose another "
                                        " mission, it will call *lightkurve.search_lightcurvefile* for this specific "
                                        "mission.\n\nIf you choose to provide "
-                                       "a file through this parameter, make sure that you follow these conventions:\n"
-                                       "- The file must be an ASCII file\n- The first column must contain the "
-                                       "time stamps\n- The second column must contain the flux\n* If a third "
-                                       "column exists, SMURFS will assume that these are the uncertainties "
-                                       "in the flux.\n\nSMURFS will take the file as is and won't apply "
+                                       "a file through this parameter, make sure that you follow these conventions:\n\n"
+                                       "- The file must be an ASCII file\n\n"
+                                       "- The first column must contain the time stamps\n\n"
+                                       "- The second column must contain the flux\n\n"
+                                       "- If a third column exists, SMURFS will assume that these are the uncertainties in the flux."
+                                       "\n\n\nSMURFS will take the file as is and won't apply "
                                        "any corrections to it, if you don't use the *apply_corrections* flag. "
                                        "It then assumes that the flux values are in magnitude and varying "
                                        "around 0, that the time stamps are in days and that the "
                                        "data set is properly reduced.", type=str)
     parser.add_argument("snr",
-                        help="This parameter represents the lower bound signal to noise ratio any frequency must have. SMURFS"
-                             "computes the SNR by taking the amplitude of an individual frequency (as defined by the amplitude in the frequency"
-                             "spectrum). Next, it applies half of the window size to either side of the frequency, starting by the next adjacent"
-                             "minima, and takes the mean of this window as the noise surrounding the frequency. The ratio of these two values is"
-                             "the resulting SNR for an individual frequency. By default, SMURFS stops its run when the first frequency less than"
+                        help="This parameter represents the lower bound signal to noise ratio any frequency must have. SMURFS "
+                             "computes the SNR by taking the amplitude of an individual frequency (as defined by the amplitude in the frequency "
+                             "spectrum). Next, it applies half of the window size to either side of the frequency, starting by the next adjacent "
+                             "minima, and takes the mean of this window as the noise surrounding the frequency. The ratio of these two values is "
+                             "the resulting SNR for an individual frequency. By default, SMURFS stops its run when the first frequency less than "
                              "this value has been found",
                         type=float)
     parser.add_argument("windowSize", help="The window size used to get the SNR for a given frequency. SMURFS "
@@ -51,20 +52,23 @@ def get_parser():
                                            "in the periodogram, starting from the first minima next to the peak.",
                         type=float)
     parser.add_argument("-fr", "--frequencyRange",
-                        help="Setting this parameter, allows you to restrict the analysis"
-                             "of a time series to a given range in the frequency spectrum. This might be useful, if yo have a lot of high"
+                        help="Setting this parameter, allows you to restrict the analysis "
+                             "of a time series to a given range in the frequency spectrum. This might be useful, if yo have a lot of high "
                              "amplitude noise in another part of the spectrum, than the one you might be interested in. Provide the parameter "
                              "in the form *0,100*.",
                         type=str, default="None,None")
 
     parser.add_argument("-ssa", "--skipSimilarFrequencies",
-                        help="Ignores regions where SMURFS finds multiple frequencies within a small range."
+                        help="Ignores regions where SMURFS finds multiple frequencies within a small range. "
                              "This can happen due to insufficient fits or signals that are hard to fit.",
                         action='store_true')
 
     parser.add_argument("-sc", "--skipCutoff",
-                        help="Skips the cutoff check, so similar frequencies don't chancel the run. Be aware that this "
-                             "might lead to unknown behaviour",
+                        help="By default, SMURFS stops the extraction of frequencies if it finds 10 frequencies in a row"
+                             "that have a standard deviation of <0.05, as it assumes it can't work itself out of "
+                             "this region. You can override this behaviour by setting this flag. Be aware, that "
+                             "this might lead to unknown behaviour. Usually, instead of setting this flag, it is "
+                             "better to set the -ssa flag",
                         action='store_true')
 
     parser.add_argument("-ef", "--extendFrequencies",
@@ -73,12 +77,13 @@ def get_parser():
                              "frequencies in a row.", type=int, default=0)
 
     parser.add_argument("-imf", "--improveFitMode",
-                        help="This parameter defines the way SMURFS uses a Period like improvement of frequencies. You "
-                             "can set the following modes:\n* -*all*: Tries to refit all found frequencies after every "
-                             "frequeny that is found. This is the usual behaviour of Period and the default setting.\n"
-                             "-*end*: Improves the frequencies after SMURFS would stop its run\n-*none*: Disables "
-                             "the improve frequencies setting. This can be useful if you find a lot of frequencies and "
-                             "the run would take an unnecessary amount of time",type=str, choices=['all', 'end', 'none'],
+                        help="This parameter defines the way SMURFS uses a Period04 like improvement of frequencies."
+                             " You can set the following modes:\n\n"
+                             "- *all*: Tries to refit all found frequencies after every frequeny that is found. This is the usual behaviour of Period04 and the default setting.\n\n"
+                             "- *end*: Improves the frequencies after SMURFS would stop its run\n\n"
+                             "- *none*: Disables the improve frequencies setting. This can be useful if you find a lot of frequencies and the run would take an unnecessary amount of time\n\n"
+                        , type=str,
+                        choices=['all', 'end', 'none'],
                         default='all')
 
     parser.add_argument("-fm", "--fitMethod",
@@ -89,13 +94,14 @@ def get_parser():
                         type=str, choices=["scipy", "lmfit"], default="lmfit")
 
     parser.add_argument("-ft", "--fluxType",
-                        help='Due to how TESS reduces its data, you can choose different flux types if you provide '
-                             'a star name. For SC data, TESS gives you two possibilities:\n- *SAP flux*: SAP is the '
-                             'simple aperture photometry flux (resulting light curve is the flux after summing the '
-                             'calibrated pixels within the TESS optimal aperture)\n- *PDCSAP flux*: PDCSAP is the '
-                             'Pre-search Data conditioned Simple aperture photometry, which is corrected using '
-                             'co-trending basis vectors.\n\nBy default we use the PDCSAP flux, but you can also '
-                             'choose another one if you like.\n\nIf your target is only observed in LC mode, SMURFS '
+                        help='The TESS mission gives its end users different data products to choose, if you download '
+                             'them directly from MAST. You can pass the type of data product you like using this '
+                             'parameter. For the SC data, where the light curve is preprocessed by SPOC, you can choose'
+                             'two different products: \n\n'
+                             '- *SAP flux*: SAP is the simple aperture photometry flux (resulting light curve is the flux after summing the calibrated pixels within the TESS optimal aperture)\n\n'
+                             '- *PDCSAP flux*: PDCSAP is the Pre-search Data conditioned Simple aperture photometry, which is corrected using co-trending basis vectors.'
+                             '\n\n\nBy default we use the PDCSAP flux, but you can also '
+                             'choose another one if you like.\n\n\nIf your target is only observed in LC mode, SMURFS '
                              'also provides these two modes (these have a slightly different meaning, their '
                              'result is however equivalent to the SC SAP and PDSCAP fluxes, see the Eleanor '
                              'documentation). However, in LC mode you have also the PSF flux type, which models a '

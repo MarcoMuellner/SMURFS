@@ -16,5 +16,6 @@ Sphinx==2.3.1
 sphinx-argparse
 recommonmark
 sphinx_rtd_theme
+sphinx-autodoc-typehints
 tess-point>=0.3.8
 nbsphinx
