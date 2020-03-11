@@ -13,7 +13,6 @@
 import os
 import sys
 from recommonmark.transform import AutoStructify
-from smurfs.__version__ import __version__
 sys.path.insert(0, os.path.abspath(os.path.join("..","..")))
 sys.setrecursionlimit(1500)
 
@@ -24,7 +23,7 @@ copyright = '2019, Marco Müllner'
 author = 'Marco Müllner'
 
 # The full version, including alpha/beta/rc tags
-release = __version__
+release = "1.1.6"
 
 
 # -- General configuration ---------------------------------------------------
