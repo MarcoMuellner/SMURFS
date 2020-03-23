@@ -260,7 +260,6 @@ class Frequency:
 
         :param mode:'scipy' or 'lmfit'
         :return: Pre-whitened lightcurve object
-
         """
         if mode == 'scipy':
             self.amp, self.f, self.phase, param = self.scipy_fit()
@@ -349,7 +348,7 @@ class FFinder:
         self.f_min = f_min
         self.f_max = f_max
         self.lc: LightCurve = smurfs.lc
-        self.periodogramm: Periodogram = Periodogram.from_lightcurve(self.lc, f_min=f_min, f_max=f_max)
+        self.pdg: Periodogram = Periodogram.from_lightcurve(self.lc, f_min=f_min, f_max=f_max)
         self.nyquist = smurfs.nyquist
 
         self._spectral_window = None
@@ -358,11 +357,11 @@ class FFinder:
         self.columns = ['f_obj', 'frequency', 'amp', 'phase', 'snr', 'res_noise', 'significant']
         self.result = df([], columns=self.columns)
 
-        mprint(f"Periodogramm from {self.periodogramm.frequency[0].round(2)} to "
-               f"{self.periodogramm.frequency[-1].round(2)}", log)
+        mprint(f"Periodogramm from {self.pdg.frequency[0].round(2)} to "
+               f"{self.pdg.frequency[-1].round(2)}", log)
 
     def run(self, snr: float = 4, window_size: float = 2, skip_similar: bool = False, similar_chancel=True,
-            extend_frequencies: int = 0, improve_fit=True, mode='lmfit') -> df:
+            extend_frequencies: int = 0, improve_fit=True, mode='lmfit',frequency_detection=None) -> df:
         """
         Starts the frequency extraction from a light curve. In general, it always uses the frequency of maximum power
         and removes it from the light curve. In general, this process is repeated until we reach a frequency that
@@ -378,6 +377,7 @@ class FFinder:
         :param extend_frequencies: Defines the number of insignificant frequencies, the analysis extends to.
         :param improve_fit: If this is set, the combination of frequencies are fitted to the data set to improve the parameters
         :param mode: Fitting mode. Can be either 'lmfit' or 'scipy'
+        :param frequency_detection: If this value is not None and the ratio between the amplitude of the found frequency and the amplitude of the frequency in the original spectrum exceeds this value, this frequency is ignored.
         :return: Pandas dataframe, consisting of the results for the analysis. Consists of a *Frequency* object, frequency, amplitude, phase, snr, residual noise and a significance flag.
         """
         # todo incorporate flux error
@@ -387,14 +387,14 @@ class FFinder:
         similar_chancel_text = ctext('Activated' if similar_chancel else 'Deactivated',
                                      info if similar_chancel else error)
 
-        f_u = self.periodogramm.frequency.unit
+        f_u = self.pdg.frequency.unit
         a_u = u.mag
 
         mprint(f"Skip similar: {skip_similar_text}", log)
         mprint(f"Chancel after 10 similar: {similar_chancel_text}", log)
         mprint(f"Window size: {window_size}", log)
         mprint(f"Number of extended frequencies: {extend_frequencies}", log)
-        mprint(f"Nyquist frequency: {(self.nyquist * self.periodogramm.frequency.unit).round(2)}", info)
+        mprint(f"Nyquist frequency: {(self.nyquist * self.pdg.frequency.unit).round(2)}", info)
 
         lc: LightCurve = self.lc
 
@@ -422,6 +422,19 @@ class FFinder:
 
                 lc = f.pre_whiten(mode)
                 res_noise = np.mean(lc.flux)
+
+
+                if frequency_detection is not None:
+                    amp = np.amax(self.pdg.power[f.lower_m:f.upper_m])
+                    if f.amp/amp.value <0.3:
+                        if self.rm_ranges is None:
+                            self.rm_ranges = [(self.pdg.frequency[f.lower_m].value,self.pdg.frequency[f.upper_m].value)]
+                        else:
+                            self.rm_ranges.append((self.pdg.frequency[f.lower_m].value,self.pdg.frequency[f.upper_m].value))
+                        mprint(f"{f.f} {f_u}   {f.amp} {a_u}   {f.phase}  can't be detected in original periodogram. "
+                               f"Skipping the range between {'%.3f'%self.pdg.frequency[f.lower_m].value} "
+                               f"and {'%.3f'%self.pdg.frequency[f.upper_m].value}",warn)
+                        continue
 
                 f._label = f"F{len(result)}"
 
@@ -474,7 +487,7 @@ class FFinder:
         else:
             color = 'grey'
 
-        ax: Axes = self.periodogramm.plot(ax=ax, color=color, ylabel='Amplitude [mag]', **kwargs)
+        ax: Axes = self.pdg.plot(ax=ax, color=color, ylabel='Amplitude [mag]', **kwargs)
 
         if plot_insignificant:
             frame = self.result

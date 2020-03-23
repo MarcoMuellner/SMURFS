@@ -75,6 +75,13 @@ def get_parser():
                         help="Extends the analysis by n frequencies. By default, SMURFS stops when it finds the first "
                              "insignificant frequency. Setting this parameter requires SMURFS to find n insignificant "
                              "frequencies in a row.", type=int, default=0)
+    parser.add_argument("-fd","--frequencyDetection",help="If this value is set, a found frequency is compared to the "
+                                                          "original periodogramm. If the ratio between the "
+                                                          "amplitude of the found frequency and the maximum in "
+                                                          "the range of the found frequency on the original "
+                                                          "periodogram is lower than the set value, it will "
+                                                          "ignore this frequency range going forward.",type=float,
+                        default=None)
 
     parser.add_argument("-imf", "--improveFitMode",
                         help="This parameter defines the way SMURFS uses a Period04 like improvement of frequencies."
@@ -217,7 +224,7 @@ def main(args=None):
             s.run(snr=args.snr, window_size=args.windowSize, f_min=f_min, f_max=f_max,
                   skip_similar=args.skipSimilarFrequencies, similar_chancel=not args.skipCutoff
                   , extend_frequencies=args.extendFrequencies, improve_fit=improve_fit
-                  , mode=args.fitMethod)
+                  , mode=args.fitMethod,frequency_detection=args.frequencyDetection)
 
             if args.improveFitMode == 'end':
                 mprint("Improving fit ...", state)
