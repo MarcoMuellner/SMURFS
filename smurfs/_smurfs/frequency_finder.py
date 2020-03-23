@@ -192,7 +192,7 @@ class Frequency:
                f_guess,  # frequency
                0  # phase --> set to center
                ]
-        limits = [[0 * 5 * amp_guess, 0.5 * f_guess, 0], [1.5 * amp_guess, 1.5 * f_guess, 1]]
+        limits = [[0.5 * amp_guess, 0.5 * f_guess, 0], [1.5 * amp_guess, 1.5 * f_guess, 1]]
         try:
             popt, pcov = curve_fit(sin, self.lc.time, self.lc.flux, p0=arr, bounds=limits)
         except RuntimeError:
@@ -220,20 +220,30 @@ class Frequency:
         amp_guess = self.pdg.max_power.value
 
         model = Model(sin)
-        model.set_param_hint('amp', value=amp_guess, min=0.5 * amp_guess, max=1.5 * amp_guess)
-        model.set_param_hint('f', value=f_guess, min=0.5 * f_guess, max=1.5 * f_guess)
+        model.set_param_hint('amp', value=amp_guess, min=0.8 * amp_guess, max=1.2 * amp_guess)
+        #model.set_param_hint('f', value=f_guess, min=0.5 * f_guess, max=1.5 * f_guess)
+        model.set_param_hint('f', value=f_guess,vary=False)
         model.set_param_hint('phase', value=0.5, min=0, max=1)
 
         result = model.fit(self.lc.flux, x=self.lc.time)
 
         # after first fit, vary only phase
-        model = Model(sin)
-        model.set_param_hint('amp', value=result.values['amp'], vary=False)
-        model.set_param_hint('f', value=result.values['f'], vary=False)
-        model.set_param_hint('phase', value=0.5, min=0, max=1)
-        result = model.fit(self.lc.flux, x=self.lc.time)
+        ph_list = [0.5,0.3,0.7]
+        for i in ph_list:
+            model = Model(sin)
+            model.set_param_hint('amp', value=result.values['amp'], vary=False)
+            model.set_param_hint('f', value=result.values['f'], vary=False)
+            model.set_param_hint('phase', value=i, min=0, max=1)
+            result = model.fit(self.lc.flux, x=self.lc.time)
 
-        a, f, ph = result.values['amp'], result.values['f'], result.values['phase']
+            a, f, ph = result.values['amp'], result.values['f'], result.values['phase']
+            if np.abs(ph-i) > 10**-2:
+                break
+            else:
+                mprint(f"Initial value {i} --> {ph}. Trying another initial value",log)
+
+        if np.abs(ph-ph_list[-1]) < 10**-3:
+            mprint(f"Phase is very close to initial value of fit!",warn)
 
         if self.flux_error is None or True:
             sigma_amp, sigma_f, sigma_phi = m_od_uncertainty(self.lc, a)
