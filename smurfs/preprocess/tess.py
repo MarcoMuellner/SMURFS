@@ -36,6 +36,40 @@ params = {
 }
 rcParams.update(params)
 
+def pixel_by_pixel(data : eleanor.TargetData, whole_cutout : bool=False):
+    """
+    Plots light curves pixel by pixel, either on the full cutout or only the aperture
+
+    :param data: data object
+    :param whole_cutout: Defines if the whole cutout or only the aperture is used
+    """
+    aperture_mask = data.aperture > 0
+    indx_mask = [[i for i,masked in enumerate(mask_row) if (masked or whole_cutout)] for mask_row in aperture_mask]
+    if whole_cutout:
+        xrange  = np.arange(0,aperture_mask.shape[0])
+        yrange = np.arange(0,aperture_mask.shape[1])
+    else:
+        xrange = np.unique(np.where(aperture_mask)[0])
+        yrange = np.unique(np.where(aperture_mask)[1])
+
+    fig,ax_list = pl.subplots(ncols = len(xrange),nrows=len(yrange),figsize=(8.27,11.69),dpi=100)
+    fig : Figure
+    ax_list : List[Axes]
+    q = data.quality == 0
+    [[ax.axis('off') for ax in ax_list_col] for ax_list_col in ax_list]
+    [[ax.tick_params(axis='both',which='both',bottom=False,top=False,left=False,right=False, labelbottom=False,labelleft=False) for ax in ax_list_col] for ax_list_col in ax_list]
+    for row,col_list in enumerate(indx_mask):
+        for col in col_list:
+            flux = data.corrected_flux(flux = data.tpf[:,row,col])
+            time = data.time
+            y = flux[q]/np.nanmedian(flux[q])
+            x = time[q]
+            ax : Axes = ax_list[row-min(xrange)][col-min(yrange)]
+            c = 'red' if aperture_mask[row][col] and whole_cutout else 'k'
+            ax.plot(x,y,'o',c=c,markersize=1)
+            ax.axis('on')
+    fig.suptitle("Pixel by pixel light curve " + ("(Aperture only)" if not whole_cutout else "(full cutout)"))
+    return fig
 
 def aperture_contour(ax: Axes, obj: eleanor.TargetData):
     """
@@ -129,9 +163,10 @@ def create_validation_page(data_list: List[eleanor.TargetData], q_list: List[np.
         pl.tight_layout()
 
         reduction_figs.append(fig)
+        reduction_figs.append(pixel_by_pixel(data))
+        reduction_figs.append(pixel_by_pixel(data,True))
 
     return  [fig_main] + reduction_figs
-
 
 from uncertainties import unumpy as unp, ufloat
 

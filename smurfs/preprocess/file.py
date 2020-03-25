@@ -32,8 +32,8 @@ def load_file(file: str, clip: float = 4, it: int = 1, apply_file_correction: bo
     lc = lc.remove_nans()
     if apply_file_correction:
         lc.flux = lc.flux + float(np.amin(lc.flux)) + 10
-        lc = mag(lc)
         lc = lc.remove_outliers(clip, maxiters=it)
+        lc = mag(lc)
         lc = lc.remove_nans()
     else:
         if np.amax(np.abs(lc.flux)) > 10:

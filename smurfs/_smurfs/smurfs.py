@@ -20,7 +20,7 @@ from matplotlib.figure import Figure
 from io import StringIO
 from pandas import read_csv
 
-from smurfs.preprocess.tess import download_lc
+from smurfs.preprocess.tess import download_lc,mag
 from smurfs.preprocess.file import load_file
 from smurfs._smurfs.frequency_finder import FFinder, sin_multiple
 from smurfs.signal.periodogram import Periodogram
@@ -94,6 +94,11 @@ class Smurfs:
 
         elif file is not None:
             self.lc: LightCurve = load_file(file,sigma_clip,iters,apply_file_correction)
+            if apply_file_correction:
+                self.lc.flux = self.lc.flux + float(np.amin(self.lc.flux)) + 10
+                self.lc = self.lc.remove_outliers(sigma_clip, maxiters=iters)
+                self.lc = mag(self.lc)
+                self.lc = self.lc.remove_nans()
             if label is None:
                 self.label = os.path.basename(file).split(".")[0]
             else:
