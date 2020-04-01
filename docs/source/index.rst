@@ -54,6 +54,7 @@ of those in jupyter notebooks. However, you can apply the same procedures in the
 
    examples/downloading_data
    examples/plotting_things
+   examples/fullframe_sc_data
 
 Index and search function
 -------------------------

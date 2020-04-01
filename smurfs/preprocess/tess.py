@@ -52,11 +52,15 @@ def pixel_by_pixel(data : eleanor.TargetData, whole_cutout : bool=False):
         xrange = np.unique(np.where(aperture_mask)[0])
         yrange = np.unique(np.where(aperture_mask)[1])
 
-    fig,ax_list = pl.subplots(ncols = len(xrange),nrows=len(yrange),figsize=(8.27,11.69),dpi=100)
+    fig,ax_list = pl.subplots(nrows = len(xrange),ncols=len(yrange),figsize=(8.27,11.69),dpi=100)
     fig : Figure
     ax_list : List[Axes]
     q = data.quality == 0
-    [[ax.axis('off') for ax in ax_list_col] for ax_list_col in ax_list]
+    try:
+        [[ax.axis('off') for ax in ax_list_col] for ax_list_col in ax_list]
+    except TypeError:
+        ax_list = [[i] for i in ax_list]
+        [[ax.axis('off') for ax in ax_list_col] for ax_list_col in ax_list]
     [[ax.tick_params(axis='both',which='both',bottom=False,top=False,left=False,right=False, labelbottom=False,labelleft=False) for ax in ax_list_col] for ax_list_col in ax_list]
     for row,col_list in enumerate(indx_mask):
         for col in col_list:
@@ -64,9 +68,13 @@ def pixel_by_pixel(data : eleanor.TargetData, whole_cutout : bool=False):
             time = data.time
             y = flux[q]/np.nanmedian(flux[q])
             x = time[q]
-            ax : Axes = ax_list[row-min(xrange)][col-min(yrange)]
+            try:
+                ax : Axes = ax_list[row-min(xrange)][col-min(yrange)]
+            except IndexError:
+                ax : Axes = ax_list[col-min(yrange)][row-min(xrange)]
             c = 'red' if aperture_mask[row][col] and whole_cutout else 'k'
             ax.plot(x,y,'o',c=c,markersize=1)
+            ax.set_ylim((np.median(y)-2*np.std(y)),(np.median(y)+2*np.std(y)))
             ax.axis('on')
     fig.suptitle("Pixel by pixel light curve " + ("(Aperture only)" if not whole_cutout else "(full cutout)"))
     return fig
