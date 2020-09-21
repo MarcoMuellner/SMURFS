@@ -200,7 +200,7 @@ def mag(lc: LightCurve) -> LightCurve:
     return lc
 
 
-def cut_ffi(tic_id:int,clip :float = 4,iter : int = 1,do_pca : bool = False, do_psf :bool = False,flux_type = 'PDCSAP') -> Tuple[LightCurve, List[Figure]]:
+def cut_ffi(tic_id:int,clip :float = 4,iter : int = 1,do_pca : bool = False, do_psf :bool = False,flux_type = 'PDCSAP') -> Tuple[LightCurve, List[Figure],List[eleanor.TargetData]]:
     """
     Extracts light curves from FFIs using TESScut and Eleanor. This function automatically combines all available
     sectors for a given target.
@@ -250,7 +250,7 @@ def cut_ffi(tic_id:int,clip :float = 4,iter : int = 1,do_pca : bool = False, do_
 
     lc : LightCurve = combine_light_curves(lc_list,clip,iter)
     mprint(f"Extracted light curve for TIC {tic_id}!", info)
-    return lc, fig
+    return lc, fig,data_list
 
 def combine_light_curves(target_list: List[Union[lk.TessLightCurve, lk.KeplerLightCurve]],sigma_clip :float = 4,iters : int = 1) -> LightCurve:
     kepler_collection = LightCurveCollection([i for i in target_list if isinstance(i, lk.KeplerLightCurve)])
@@ -314,7 +314,7 @@ def download_lc(target_name: str, flux_type='PDCSAP', mission: str = 'TESS',sigm
             res = search_lightcurvefile(target_name, mission=chosen_mission)
         else: #Only FFI available
             mprint(f"No short cadence data available for {target_name}, extracting from FFI ...",info)
-            lc, fig = cut_ffi(tic_id,sigma_clip,iters,do_pca,do_psf,flux_type)
+            lc, fig,_ = cut_ffi(tic_id,sigma_clip,iters,do_pca,do_psf,flux_type)
             mprint(f"Total observation length: {'%.2f' % (lc.time[-1] - lc.time[0])} days.", log)
             return lc, fig
     else:

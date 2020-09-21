@@ -19,6 +19,7 @@ from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 from io import StringIO
 from pandas import read_csv
+from typing import Tuple,Union
 
 from smurfs.preprocess.tess import download_lc,mag
 from smurfs.preprocess.file import load_file
@@ -280,7 +281,7 @@ class Smurfs:
 
     def run(self, snr: float = 4, window_size: float = 2, f_min: float = None, f_max: float = None,
             skip_similar: bool = False, similar_chancel=True, extend_frequencies: int = 0, improve_fit=True,
-            mode='lmfit',frequency_detection=None):
+            mode='lmfit',frequency_detection=None,fit_fun : Union[Tuple[callable,callable],callable] = None):
         """
         Starts the frequency analysis by instantiating a *FrequencyFinder* object and running it. After finishing the
         run, combinations are computed. See *FrequencyFinder.run* for an explanation of the algorithm.
@@ -295,7 +296,11 @@ class Smurfs:
         :param improve_fit: If this flag is set, all combined frequencies are re-fitted after every new frequency was found
         :param mode: Fitting mode. You can choose between 'scipy' and 'lmfit'
         :param frequency_detection: If this value is not None and the ratio between the amplitude of the found frequency and the amplitude of the frequency in the original spectrum exceeds this value, this frequency is ignored.
+        :param fit_fun: You can pass a function to smurfs to replace its default fit function. SMURFS will pass this function a kwargs object.
         """
+
+        if fit_fun is not None and not (callable(fit_fun) or (isinstance(fit_fun,tuple) and len(fit_fun)==2)):
+            raise AttributeError("fit_fun must be either a function, or a tuple of two functions")
 
         self.snr = snr
         self.window_size = window_size
@@ -308,7 +313,8 @@ class Smurfs:
         self._ff = FFinder(self, f_min, f_max)
         self._result = self._ff.run(snr=snr, window_size=window_size, skip_similar=skip_similar,
                                     similar_chancel=similar_chancel
-                                    , extend_frequencies=extend_frequencies, improve_fit=improve_fit, mode=mode,frequency_detection=frequency_detection)
+                                    , extend_frequencies=extend_frequencies, improve_fit=improve_fit, mode=mode
+                                    ,frequency_detection=frequency_detection,fit_fun=fit_fun)
         self._combinations = get_combinations((self._result[self._result.significant == True].index+1).tolist(),
                                               unp.nominal_values(
                                                   self._result[self._result.significant == True].frequency.tolist())
@@ -319,14 +325,14 @@ class Smurfs:
 
         mprint(f"{self.label} Analysis done!",info)
 
-    def improve_result(self):
+    def improve_result(self,mode='lmfit'):
         """
         Fits the combined found frequencies to the original light curve, hence improving the fit of the total model.
         """
         if self._ff is None:
             raise AttributeError("You need to run the analysis before you can improve the fit.")
 
-        self._result = self._ff.improve_result()
+        self._result = self._ff.improve_result(mode)
         self._combinations = get_combinations((self._result[self._result.significant == True].index + 1).tolist(),
                                               unp.nominal_values(
                                                   self._result[self._result.significant == True].frequency.tolist())

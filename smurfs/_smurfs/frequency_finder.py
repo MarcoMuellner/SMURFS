@@ -82,7 +82,7 @@ class Frequency:
     """
 
     def __init__(self, time: np.ndarray, flux: np.ndarray, window_size: float, snr: float, flux_err: np.ndarray = None,
-                 f_min: float = None, f_max: float = None, rm_ranges: List[Tuple[float]] = None):
+                 f_min: float = None, f_max: float = None, rm_ranges: List[Tuple[float]] = None,fit_fun : callable = None):
         if flux_err is None:
             self._lc = LightCurve(lk.LightCurve(time, flux))
         else:
@@ -100,6 +100,8 @@ class Frequency:
         self._phase = np.nan
         self._significant = self.snr > snr
         self._label = ""
+        self._fit_fun = fit_fun
+        self._other_params = None
 
     @property
     def amp(self) -> Union[float, Variable]:
@@ -118,6 +120,10 @@ class Frequency:
         Returns the frequency of the found frequency (in c/d)
         """
         return self._f
+
+    @property
+    def other_params(self):
+        return self._other_params
 
     @f.setter
     def f(self, value: Union[float, Variable]):
@@ -261,6 +267,28 @@ class Frequency:
         :param mode:'scipy' or 'lmfit'
         :return: Pre-whitened lightcurve object
         """
+        if self._fit_fun is not None:
+            kwargs = {
+                'lc':self.lc,
+                'pdg':self.pdg,
+                'f_guess':self.pdg.frequency_at_max_power.value,
+                'amp_guess':self.pdg.max_power.value
+            }
+            ret_dict = self._fit_fun(kwargs)
+            if not isinstance(ret_dict,dict) or not all(i in ret_dict.keys() for i in ['Amplitude','Frequency','Phase','LC']):
+                raise ValueError("If you are using custom fit functions, you need to return a dictionary containing at least:\n"
+                                 "1) Amplitude\n2) Frequency\n3) Phase\n4)Pre-whitened light curve")
+
+            self.amp = ret_dict['Amplitude']
+            self.f = ret_dict['Frequency']
+            self.phase = ret_dict['Phase']
+            self._other_params = {}
+            for key,val in ret_dict.items():
+                if key in ['Amplitude','Frequency','Phase','LC']:
+                    continue
+                self._other_params[key] = val
+            lc = ret_dict['LC']
+            return lc
         if mode == 'scipy':
             self.amp, self.f, self.phase, param = self.scipy_fit()
         elif mode == 'lmfit':
@@ -361,7 +389,7 @@ class FFinder:
                f"{self.pdg.frequency[-1].round(2)}", log)
 
     def run(self, snr: float = 4, window_size: float = 2, skip_similar: bool = False, similar_chancel=True,
-            extend_frequencies: int = 0, improve_fit=True, mode='lmfit',frequency_detection=None) -> df:
+            extend_frequencies: int = 0, improve_fit=True, mode='lmfit',frequency_detection=None, fit_fun : callable = None) -> df:
         """
         Starts the frequency extraction from a light curve. In general, it always uses the frequency of maximum power
         and removes it from the light curve. In general, this process is repeated until we reach a frequency that
@@ -381,6 +409,23 @@ class FFinder:
         :return: Pandas dataframe, consisting of the results for the analysis. Consists of a *Frequency* object, frequency, amplitude, phase, snr, residual noise and a significance flag.
         """
         # todo incorporate flux error
+
+        if fit_fun is not None and not (callable(fit_fun) or (isinstance(fit_fun,tuple) and len(fit_fun)==2)):
+            raise AttributeError("fit_fun must be either a function, or a tuple of two functions")
+
+        #setup custom fit functions
+        if isinstance(fit_fun,tuple):
+            single_fit = fit_fun[0]
+            multiple_fit = fit_fun[1]
+        elif fit_fun is not None:
+            single_fit = fit_fun
+            multiple_fit = None
+            if improve_fit:
+                mprint(f"Single function passed as fit function, disabling improve fit",info)
+                improve_fit = False
+        else:
+            single_fit = None
+            multiple_fit = None
 
         mprint("Starting frequency extraction.", info)
         skip_similar_text = ctext('Activated' if skip_similar else 'Deactivated', info if skip_similar else error)
@@ -407,7 +452,7 @@ class FFinder:
         try:
             while True:
                 f = Frequency(lc.time, lc.flux, window_size, snr, f_min=self.f_min, f_max=self.f_max,
-                              rm_ranges=self.rm_ranges)
+                              rm_ranges=self.rm_ranges,fit_fun= single_fit)
 
                 # check significance of frequency
                 if not f._significant:
@@ -443,9 +488,11 @@ class FFinder:
                 result.append(f)
                 noise_list.append(res_noise)
 
-                if improve_fit:
-                    result = self._improve_fit(result, mode=mode)
+                if improve_fit and multiple_fit is None:
+                    result = self._improve_fit(result, mode=mode,fit_fun=multiple_fit)
                     lc = self._res_lc_from_model(result, True)
+                if improve_fit and multiple_fit is not None:
+                    result,lc = self._improve_fit(result,fit_fun=multiple_fit)
 
                 # check for similarity of last 10 frequencies
                 if len(result) > 10:
@@ -468,8 +515,18 @@ class FFinder:
             mprint(f"Total frequencies: {len(result)}", info)
             self.res_lc = lc
             self.res_pdg = Periodogram.from_lightcurve(lc, self.f_min, self.f_max)
-            self.result = df([[i, i.f, i.amp, i.phase, i.snr, j, i.significant] for i, j in zip(result, noise_list)]
-                             , columns=self.columns)
+            if fit_fun is None:
+                self.result = df([[i, i.f, i.amp, i.phase, i.snr, j, i.significant] for i, j in zip(result, noise_list)]
+                                 , columns=self.columns)
+            else:
+                data_list = []
+                key_list = []
+                for i,j in zip(result,noise_list):
+                    data_list.append([i,i.f,i.amp,i.phase,i.snr,j,i.significant] + list(i.other_params.values()))
+                    key_list = list(i.other_params.keys())
+                self.result = df(data_list
+                                 , columns=self.columns + key_list)
+
         return self.result
 
     def plot(self, ax: Axes = None, show=False, plot_insignificant=False, **kwargs):
@@ -572,7 +629,7 @@ class FFinder:
 
         return result
 
-    def _improve_fit(self, result: List[Frequency], mode='lmfit') -> List[Frequency]:
+    def _improve_fit(self, result: List[Frequency], mode='lmfit', fit_fun :callable = None) -> Union[List[Frequency],Tuple[List[Frequency],LightCurve]]:
         """
         Performs a combination fit for all found frequencies.
 
@@ -580,6 +637,12 @@ class FFinder:
         :param mode: Method used, either 'scipy' or 'lmfit'
         :return:
         """
+        if fit_fun is not None:
+            ret_val = fit_fun(result,self.lc)
+            if not isinstance(ret_val,tuple) or len(ret_val) != 2 or not isinstance(ret_val[0],list) or any(not isinstance(i,Frequency) for i in ret_val[0]):
+                raise ValueError("Improve fit must return a list of frequency objects!")
+
+            return ret_val
         if mode == 'scipy':
             return self._scipy_fit(result)
         elif mode == 'lmfit':
@@ -609,7 +672,7 @@ class FFinder:
             return LightCurve(
                 lk.LightCurve(self.lc.time, self.lc.flux - sin_multiple(self.lc.time, *params) * self.lc.flux.unit))
 
-    def improve_result(self) -> df:
+    def improve_result(self,mode ='lmfit') -> df:
         """
         Improves the result by fitting the combined result to the original light curve
         """
@@ -617,7 +680,7 @@ class FFinder:
             return self.result
 
         f_list = self.result.f_obj.tolist()
-        f_list = self._improve_fit(f_list)
+        f_list = self._improve_fit(f_list,mode)
         self.res_lc = self._res_lc_from_model(f_list)
         self.res_pdg = Periodogram.from_lightcurve(self.res_lc, self.f_min, self.f_max)
         self.result = df(
