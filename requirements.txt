@@ -3,7 +3,7 @@ matplotlib
 numpy
 pandas
 pytest
-scipy==1.2.3
+scipy==1.10.0
 uncertainties
 astroquery
 lightkurve
