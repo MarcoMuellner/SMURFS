@@ -1,12 +1,10 @@
-quiet = False
+from smurfs.support.settings import Settings
+
 log = '7;37;40'
 info = '7;32;40'
 warn = '7;33;40'
 error = '7;31;40'
 state = '7;34;47'
-
-class Settings:
-    quiet = False
 
 
 def mprint(text: str, type: str):

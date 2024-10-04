@@ -1,31 +1,26 @@
 import numpy as np
-from lightkurve import Periodogram as lk_Periodogram,LightCurve
-from astropy.stats import LombScargle
+import lightkurve as lk
+from lightkurve.periodogram import Periodogram as lkPeriodogram
+from astropy.timeseries import LombScargle
 from astropy.units import cds
 from pandas import DataFrame as df
-from typing import List,Tuple
 
 
-class Periodogram(lk_Periodogram):
+class Periodogram(lkPeriodogram):
     """
     Custom Periodogram class, fit to the needs of smurfs. Mirrors the behaviour of the Lightkurve Periodogram class,
-    and is derived from it. See
-    https://docs.lightkurve.org/api/lightkurve.periodogram.Periodogram.html#lightkurve.periodogram.Periodogram for
-    documentation on the constructor parameters.
+    and is derived from it.
 
     This class differs from the Lightkurve Periodogram class through two aspects:
     1) It adds a different static method, that converts a Lightcurve object into a periodogram.
     2) The plotting and saving of data has been adapted to fit the needs of smurfs
     """
-    def __init__(self, frequency: np.ndarray, power: np.ndarray, nyquist: float = None, targetid=None,
-                 default_view='frequency', meta={}):
-        self.nyquist = nyquist
-        super().__init__(frequency,power,nyquist=nyquist,targetid=targetid,default_view=default_view,meta=meta)
+    def __init__(self, frequency, power, nyquist=None, targetid=None, label=None, meta={}):
+        super().__init__(frequency, power, nyquist=nyquist, targetid=targetid, label=label, meta=meta)
 
     @staticmethod
-    def from_lightcurve(lc : LightCurve, f_min=None, f_max=None, remove_ranges : List[Tuple[float]] = None
-                        , samples_per_peak = 10):
-
+    def from_lightcurve(lc: lk.LightCurve, f_min=None, f_max=None, remove_ranges: list[tuple[float]] = None,
+                        samples_per_peak=10):
         """
         Computes a periodogram from a Lightcurve object and normalizes it according to Parcivals theorem. It then
         reflects the physical values in the Light curve and has the same units. It then returns a Periodogram object.
@@ -39,31 +34,19 @@ class Periodogram(lk_Periodogram):
         :param samples_per_peak: number of samples per peak
         :return: Periodogram object
         """
+        nyquist = 1 / (2 * np.median(np.diff(lc.time.value)))
 
-        nyquist = 1/(2*np.median(np.diff(lc.time)))
+        time = lc.time.value
+        flux = lc.flux.value
 
-        try:
-            time = lc.time.value
-        except AttributeError:
-            time = lc.time
-
-        try:
-            flux = lc.flux.value
-        except AttributeError:
-            flux = lc.flux
-
-
-        ls = LombScargle(time,flux,normalization='psd')
+        ls = LombScargle(time, flux, normalization='psd')
 
         if f_max is not None and f_max > nyquist:
-            #todo warning here!
+            # TODO: Add warning here
             pass
 
-        if f_min is None:
-            f_min = 0
-
-        if f_max is None:
-            f_max = nyquist
+        f_min = 0 if f_min is None else f_min
+        f_max = nyquist if f_max is None else f_max
 
         f, p = ls.autopower(minimum_frequency=f_min, maximum_frequency=f_max,
                             samples_per_peak=samples_per_peak, nyquist_factor=1)
@@ -76,49 +59,29 @@ class Periodogram(lk_Periodogram):
         f = f[1:]
 
         if remove_ranges is not None:
-            mask_list = []
+            mask = np.ones_like(f, dtype=bool)
             for r in remove_ranges:
-                mask = f < r[0]
-                mask = np.logical_or(mask,f > r[1])
-                mask_list.append(mask)
+                mask &= (f < r[0]) | (f > r[1])
+            f = f[mask]
+            p = p[mask]
 
-            combined_mask = mask_list[0]
-            if len(mask_list) > 1:
-                for m in mask_list[1:]:
-                    combined_mask = np.logical_and(combined_mask,m)
+        return Periodogram(f * (1 / cds.d), p * cds.ppm, nyquist=nyquist, targetid=lc.meta.get('targetid'))
 
-            f = f[combined_mask]
-            p = p[combined_mask]
-
-        return Periodogram(f*(1/cds.d),p*cds.ppm,nyquist=nyquist,targetid=lc.targetid)
-
-    def plot(self,scale='linear', ax=None, xlabel=None, ylabel=None, title='', style='lightkurve', view=None,
-             unit=None,color='k', **kwargs):
+    def plot(self, scale='linear', ax=None, xlabel=None, ylabel=None, title='', style='lightkurve', view=None,
+             unit=None, color='k', **kwargs):
         """
         Plots the periodogram. Same call signature as lightkurve.periodogram.Periodogram.
         """
+        ls = kwargs.pop('linestyle', '-')
+        ylabel = ylabel or kwargs.pop('ylabel', 'Amplitude [mag]')
 
-        if 'linestyle' in kwargs.keys():
-            ls = kwargs['linestyle']
-            del kwargs['linestyle']
-        else:
-            ls = '-'
+        return super().plot(scale=scale, ax=ax, xlabel=xlabel, ylabel=ylabel, title=title, style=style,
+                            view=view, unit=unit, color=color, linestyle=ls, **kwargs)
 
-        if ylabel is not None:
-            ylabel = ylabel
-        elif 'ylabel' in kwargs.keys():
-            ylabel = kwargs['ylabel']
-            del kwargs['ylabel']
-        else:
-            ylabel='Amplitude [mag]'
-
-
-        return super().plot(scale,ax,xlabel,ylabel,title,style,view,unit,linestyle=ls,color=color,**kwargs)
-
-    def to_csv(self,file):
+    def to_csv(self, file):
         """
         Stores the periodogram into a file.
         :param file: File object
         """
-        frame = df.from_dict({'Frequency':self.frequency,'Power':self.power})
-        frame.to_csv(file,index=False)
+        frame = df.from_dict({'Frequency': self.frequency.value, 'Power': self.power.value})
+        frame.to_csv(file, index=False)
