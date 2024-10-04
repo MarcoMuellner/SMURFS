@@ -1,33 +1,33 @@
 import lightkurve as lk
-import astropy.units as u
-from typing import Union
 from matplotlib.axes import Axes
 
-class LightCurve (lk.TessLightCurve):
+class LightCurve(lk.LightCurve):
     """
-    Custom LightCurve object. Reimplements the plot routine, as we only use mag within SMURFS
+     Custom LightCurve object. Reimplements the plot routine, as we only use mag within SMURFS.
+     Inherits from lightkurve's LightCurve class.
 
-    :param lc: Lightcurve object
-    """
-    def __init__(self, lc : Union[lk.TessLightCurve,lk.LightCurve]):
-        if isinstance(lc,lk.TessLightCurve):
-            super().__init__(time=lc.time,flux=lc.flux,flux_err=lc.flux_err,flux_unit=lc.flux_unit,time_format=lc.time_format,
-                             centroid_col=lc.centroid_col,centroid_row=lc.centroid_row,quality=lc.quality,
-                             quality_bitmask=lc.quality_bitmask,cadenceno=lc.cadenceno,sector=lc.sector,
-                             camera=lc.camera, ccd=lc.ccd,targetid=lc.targetid,ra=lc.ra,dec=lc.dec,label=lc.label,
-                             meta=lc.label)
+     :param data: Data to initialize the light curve. Can be a lightkurve LightCurve object or compatible data.
+     :param args: Additional positional arguments passed to the parent class.
+     :param kwargs: Additional keyword arguments passed to the parent class.
+     """
+    def __init__(self, data=None, *args, **kwargs):
+        if isinstance(data, lk.LightCurve):
+            # If data is already a LightCurve object, we initialize from its data
+            super().__init__(time=data.time, flux=data.flux, flux_err=data.flux_err, meta=data.meta)
+            # Copy over any additional attributes that might be specific to TESS
+            for attr in ['sector', 'camera', 'ccd', 'ra', 'dec']:
+                if hasattr(data, attr):
+                    setattr(self, attr, getattr(data, attr))
         else:
-            super().__init__(time=lc.time,flux=lc.flux,flux_err=lc.flux_err,time_format=lc.time_format,
-                             time_scale=lc.time_scale,targetid=lc.targetid,label=lc.label,meta=lc.meta)
+            # Otherwise, initialize normally
+            super().__init__(data, *args, **kwargs)
 
-    def plot(self,**kwargs):
+    def plot(self, **kwargs):
         ax: Axes = super().plot(color='k', ylabel="Flux [mag]", normalize=False, **kwargs)
         ax.set_ylim(ax.get_ylim()[::-1])
-
         return ax
 
-    def scatter(self,**kwargs):
+    def scatter(self, **kwargs):
         ax: Axes = super().scatter(color='k', ylabel="Flux [mag]", normalize=False, **kwargs)
         ax.set_ylim(ax.get_ylim()[::-1])
-
         return ax

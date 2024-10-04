@@ -1,12 +1,13 @@
 import lightkurve as lk
 import numpy as np
+from astropy.time import Time
 from scipy.optimize import curve_fit
 from uncertainties import ufloat, unumpy as unp
 import matplotlib.pyplot as pl
 from matplotlib.axes import Axes
 from uncertainties.core import AffineScalarFunc
 from lmfit import Model
-from typing import Union, List, Tuple, TYPE_CHECKING
+from typing import Union, List, Tuple
 from pandas import DataFrame as df
 import astropy.units as u
 from uncertainties.core import Variable
@@ -25,6 +26,8 @@ def sin(x: np.ndarray, amp: float, f: float, phase: float) -> np.ndarray:
     :param f: frequency, c/d
     :param phase: phase, normed to 1
     """
+    if isinstance(x, Time):
+        x = x.jd
     return amp * np.sin(2. * np.pi * (f * x + phase))
 
 
@@ -55,7 +58,7 @@ def m_od_uncertainty(lc: LightCurve, a: float) -> Tuple:
     N = len(lc.flux)
     sigma_m = np.std(lc.flux)
     sigma_amp = np.sqrt(2 / N) * sigma_m
-    sigma_f = np.sqrt(6 / N) * (1 / (np.pi * max(lc.time) - min(lc.time))) * sigma_m / a
+    sigma_f = np.sqrt(6 / N) * (1 / (np.pi * max(lc.time.jd) - min(lc.time.jd))) * sigma_m / a
     sigma_phi = np.sqrt(2 / N) * sigma_m / (a * (2 * np.pi))
     try:
         return sigma_amp.value, sigma_f.value, sigma_phi.value

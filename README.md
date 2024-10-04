@@ -4,7 +4,7 @@
 **SMURFS** provides automatic extraction of frequencies from
 timeseries. It provides various interfaces, from a standalone command line tool, to jupyter and python 
 integrations and computes possible frequency combinations, directly downloads and reduces (if necessary) data 
-of TESS/Kepler/K2 observations and much much more.
+of TESS/Kepler/K2 observations and much much more.Smart UseR Frequency analySer
 ## Getting started
 
 To install smurfs, you need python > 3.5, pip as well as cmake. If you don't have these, install them through the
