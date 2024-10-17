@@ -13,19 +13,16 @@ packet manager of your choice (f.e. _brew_(Mac) or _apt_ (Debian)). For pip chec
 
 ## Installation
 
-First off, create a virtual environment
+To install SMURFS, simply run the following command:
 
 ```bash
-cd /Path/
-python3 -m venv venv/
-source venv/bin/activate
+pipx install smurfs
 ```
 
-Install smurfs through pip
+if you don't have pipx installed, check [here](https://pipx.pypa.io/stable/installation/) for instructions.
 
 ```bash
-pip install smurfs
-```
+
 
 ## Quickstart
 
