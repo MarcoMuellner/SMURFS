@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "smurfs"
-version = "2.0.0"
+version = "2.0.0rc4"
 description = "Smart UseR Frequency analySer"
 authors = ["Marco Muellner <muellnermarco@gmail.com>"]
 license = "MIT"
