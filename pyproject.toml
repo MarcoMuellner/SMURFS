@@ -35,3 +35,6 @@ build-backend = "poetry.core.masonry.api"
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py", "*_test.py"]
+
+[tool.poetry.scripts]
+smurfs = "smurfs.__main__:main"

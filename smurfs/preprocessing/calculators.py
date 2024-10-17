@@ -12,11 +12,11 @@ def mag(lc: LightCurve) -> LightCurve:
     :param lc: lightcurve object
     :return: reduced light curve object
     """
-
     lc = lc.remove_nans()
 
-    flux = lc.flux + (np.abs(2 * np.amin(lc.flux)) if np.amin(lc.flux) < 0 else 100)
-    flux = unp.uarray(flux.value, np.abs(lc.flux_err.value))
+    flux = lc.flux.value
+    flux = flux + (np.abs(2 * np.amin(flux)) if np.amin(flux) < 0 else 100)
+    flux = unp.uarray(flux, np.abs(lc.flux_err.value))
 
     flux = -2.5 * unp.log10(flux)
 

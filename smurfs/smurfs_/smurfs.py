@@ -74,7 +74,7 @@ class Smurfs:
 
         Settings.quiet = quiet_flag
 
-        self.lc = load_data(target, flux_type, mission)
+        self.lc = load_data(target, flux_type,sigma_clip, iters, mission)
 
         if label is None:
             self.label = 'LC'

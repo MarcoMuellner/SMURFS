@@ -3,7 +3,9 @@ from enum import Enum
 from pathlib import Path
 
 import numpy as np
+from lightkurve import LightCurveCollection
 from pandas import read_csv
+import lightkurve as lk
 
 from smurfs.preprocessing.calculators import mag
 from smurfs.signal.lightcurve import LightCurve
@@ -14,12 +16,12 @@ class Mission(str, Enum):
     KEPLER = "Kepler"
     TESS = "TESS"
     K2 = "K2"
+    all = "all"
 
 
 class FluxType(str, Enum):
     PDCSAP = "PDCSAP"
     SAP = "SAP"
-    PSF = "PSF"
 
 
 def load_data_from_file(target_path : Path, clip: float = 4, it: int = 1, apply_file_correction: bool = False) -> LightCurve:
@@ -61,14 +63,32 @@ def load_data_from_file(target_path : Path, clip: float = 4, it: int = 1, apply_
     mprint("Extracted data from target!", info)
     return lc
 
+def load_data_from_target_name(target_name : str, flux_type: FluxType, mission: Mission = Mission.TESS, sigma_clip : float =4, iters: int = 1 ) -> LightCurve:
 
-def load_data(target_name : str, flux_type: FluxType, mission: Mission = Mission.TESS) -> LightCurve:
+    chosen_mission = (mission,) if mission != Mission.all else (Mission.KEPLER, Mission.TESS, Mission.K2)
+    mprint(f"Searching processed light curves for {target_name} on mission(s) {','.join(chosen_mission)} ... ", log)
+
+    if len(chosen_mission) == 1:
+        results = lk.search_lightcurve(target_name, mission=chosen_mission[0].value)
+    else:
+        results = lk.search_lightcurve(target_name)
+
+    if len(results) == 0:
+        raise FileNotFoundError(f"No light curve found for {target_name} on mission(s) {','.join(chosen_mission)}")
+
+    downloads = results.download_all()
+
+    available_missions = set([result.mission[0].split(" ")[0] for result in results])
+    mprint(f"Found light curves for {target_name} on mission(s) {','.join(available_missions)}", info)
+
+    return LightCurve(downloads.stitch(corrector_func=mag).remove_nans().remove_outliers(sigma_clip,maxiters=iters))
+
+def load_data(target_name : str,  flux_type: FluxType,clip: float = 4, iters: int = 1, mission: Mission = Mission.TESS) -> LightCurve:
     target_path = Path(target_name)
 
     if target_path.is_file():
-        return load_data_from_file(target_path,flux_type)
+        return load_data_from_file(target_path,clip)
     else:
-        raise FileNotFoundError(f"File {target_path} doesn't exist!")
-        #return load_data_from_mission(target_name,flux_type,mission)
+        return load_data_from_target_name(target_name,flux_type,mission, clip, iters)
 
     pass
