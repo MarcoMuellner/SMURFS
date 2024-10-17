@@ -21,9 +21,6 @@ pipx install smurfs
 
 if you don't have pipx installed, check [here](https://pipx.pypa.io/stable/installation/) for instructions.
 
-```bash
-
-
 ## Quickstart
 
 Using SMURFS as a standalone command line tool is very simple. Simply call ```smurfs``` with a **target**, signal to noise
