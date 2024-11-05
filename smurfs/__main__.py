@@ -1,3 +1,4 @@
+import sys
 import warnings
 
 import typer
@@ -102,5 +103,8 @@ def main(
             s.improve_result()
 
         s.save(save_path, store_object)
-if __name__ == "__main__":
+
+if __name__ == "__main__" or __name__ == "smurfs.__main__":
     app()
+
+sys.exit(0)

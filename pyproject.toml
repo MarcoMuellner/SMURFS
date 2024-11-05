@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "smurfs"
-version = "2.0.0rc5"
+version = "2.0.0rc6"
 description = "Smart UseR Frequency analySer"
 authors = ["Marco Muellner <muellnermarco@gmail.com>"]
 license = "MIT"
@@ -37,4 +37,4 @@ testpaths = ["tests"]
 python_files = ["test_*.py", "*_test.py"]
 
 [tool.poetry.scripts]
-smurfs = "smurfs.__main__:main"
+smurfs = "smurfs:__main__"
