@@ -2,7 +2,7 @@ import numpy as np
 from uncertainties import unumpy as unp
 import astropy.units as u
 
-from smurfs.signal.lightcurve import LightCurve
+from smurfs.smurfs_common.signal.lightcurve import LightCurve
 
 
 def mag(lc: LightCurve) -> LightCurve:

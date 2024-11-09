@@ -5,8 +5,8 @@ import typer
 from typing import Optional, Annotated
 from pathlib import Path
 
-from smurfs.preprocessing.dataloader import FluxType, Mission
-from smurfs.smurfs_.smurfs import Smurfs, FitMethod, ImproveFitMode
+from smurfs.smurfs_common.preprocessing.dataloader import FluxType, Mission
+from smurfs.smurfs_common.smurfs_.smurfs import Smurfs, FitMethod, ImproveFitMode
 
 app = typer.Typer()
 
@@ -104,7 +104,7 @@ def main(
 
         s.save(save_path, store_object)
 
-if __name__ == "__main__" or __name__ == "smurfs.__main__":
+if __name__ == "__main__" or __name__ == "smurfs.smurfs_cli.__main__":
     app()
 
 sys.exit(0)

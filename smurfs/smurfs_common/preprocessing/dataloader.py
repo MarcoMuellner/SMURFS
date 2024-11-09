@@ -7,9 +7,9 @@ from lightkurve import LightCurveCollection
 from pandas import read_csv
 import lightkurve as lk
 
-from smurfs.preprocessing.calculators import mag
-from smurfs.signal.lightcurve import LightCurve
-from smurfs.support.mprint import mprint, log, warn, info
+from smurfs.smurfs_common.preprocessing.calculators import mag
+from smurfs.smurfs_common.signal.lightcurve import LightCurve
+from smurfs.smurfs_common.support.mprint import mprint, log, warn, info
 
 
 class Mission(str, Enum):

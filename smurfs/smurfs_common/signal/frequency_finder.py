@@ -12,9 +12,9 @@ from pandas import DataFrame as df
 import astropy.units as u
 from uncertainties.core import Variable
 
-from smurfs.signal.periodogram import Periodogram
-from smurfs.signal.lightcurve import LightCurve
-from smurfs.support.mprint import *
+from smurfs.smurfs_common.signal.periodogram import Periodogram
+from smurfs.smurfs_common.signal.lightcurve import LightCurve
+from smurfs.smurfs_common.support.mprint import *
 
 
 def sin(x: np.ndarray, amp: float, f: float, phase: float) -> np.ndarray:

@@ -22,6 +22,8 @@ jupyter = "^1.1.1"
 pyfcomb = "^2.1.2"
 nbsphinx = "^0.9.5"
 typer = "^0.12.5"
+dash = "^2.18.2"
+dash-bootstrap-components = "^1.6.0"
 
 
 [tool.poetry.group.dev.dependencies]
@@ -37,4 +39,5 @@ testpaths = ["tests"]
 python_files = ["test_*.py", "*_test.py"]
 
 [tool.poetry.scripts]
-smurfs = "smurfs:__main__"
+smurfs = "smurfs.smurfs_cli.__main__:main"
+smurfs-ui = "smurfs.smurfs_ui.__main__:main"

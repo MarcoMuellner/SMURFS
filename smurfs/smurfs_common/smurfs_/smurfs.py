@@ -10,12 +10,12 @@ import pandas as pd
 from matplotlib import pyplot as plt
 from pandas import DataFrame as df
 
-from smurfs.preprocessing.dataloader import load_data, FluxType, Mission
-from smurfs.signal.frequency_finder import FFinder
-from smurfs.signal.lightcurve import LightCurve
-from smurfs.signal.periodogram import Periodogram
-from smurfs.support.mprint import mprint, info, ctext, error, log
-from smurfs.support.settings import Settings
+from smurfs.smurfs_common.preprocessing.dataloader import load_data, FluxType, Mission
+from smurfs.smurfs_common.signal.frequency_finder import FFinder
+from smurfs.smurfs_common.signal.lightcurve import LightCurve
+from smurfs.smurfs_common.signal.periodogram import Periodogram
+from smurfs.smurfs_common.support.mprint import mprint, info, ctext, error, log
+from smurfs.smurfs_common.support.settings import Settings
 
 on_rtd = os.environ.get('READTHEDOCS') == 'True'
 if not on_rtd:
@@ -131,7 +131,7 @@ class Smurfs:
     @property
     def result(self) -> df:
         """
-        Gives a pandas dataframe of the result from smurfs. It consists of the following columns in this order:
+        Gives a pandas dataframe of the result from smurfs.smurfs_common. It consists of the following columns in this order:
 
         - f_obj: *Frequency* object, that represents a given frequency
         - frequency
