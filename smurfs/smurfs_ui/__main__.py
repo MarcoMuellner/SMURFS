@@ -232,9 +232,12 @@ class SMURFSApp:
 
 
 def main(port: Optional[int] = 8050):
-    mp.set_start_method('spawn')
-    app = SMURFSApp()
-    app.run(port=port)
+    try:
+        mp.set_start_method('spawn')
+        app = SMURFSApp()
+        app.run(port=port)
+    except RuntimeError:
+        pass
 
 
 if __name__ == "__main__" or __name__ == "smurfs.smurfs_ui.__main__":
