@@ -299,7 +299,7 @@ class Frequency:
         else:
             raise ValueError("Unknown fit mode")
 
-        return LightCurve(lk.LightCurve(self.lc.time, self.lc.flux - sin(self.lc.time, *param)))
+        return LightCurve(lk.LightCurve(self.lc.time.value, self.lc.flux.value - sin(self.lc.time.value, *param)))
 
     def plot(self, ax: Axes = None, show=False, use_guess=False) -> Union[None, Axes]:
         """
