@@ -3,7 +3,7 @@ import numpy as np
 from lightkurve import LightCurve
 import astropy.units as u
 
-from smurfs.preprocessing.calculators import mag
+from smurfs.smurfs_common.preprocessing.calculators import mag
 
 
 @pytest.fixture

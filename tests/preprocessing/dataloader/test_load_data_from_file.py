@@ -2,13 +2,13 @@ import pytest
 import numpy as np
 from pathlib import Path
 from lightkurve import LightCurve
-from smurfs.preprocessing.dataloader import load_data_from_file, FluxType
+from smurfs.smurfs_common.preprocessing.dataloader import load_data_from_file, FluxType
 
 # Mock the mprint function to avoid printing during tests
 from unittest.mock import patch
 @pytest.fixture(autouse=True)
 def mock_mprint():
-    with patch('smurfs.preprocessing.dataloader.mprint'):
+    with patch('smurfs.smurfs_common.preprocessing.dataloader.mprint'):
         yield
 
 # Configure the test file
