@@ -37,6 +37,9 @@ def run_analysis_process(value_dict: Dict[str, Any], log_queue: mp.Queue):
 
     except Exception as e:
         tb = traceback.format_exc()
-        mprint(f"Error occurred during analysis: {str(e)}", state)
-        mprint(tb, state)
+        ProcessManagerObjects.process_logger.log_error(f"Error occurred during analysis: {str(e)}")
+        ProcessManagerObjects.process_logger.log_error(tb)
+
+        print(f"Error occurred during analysis: {str(e)}")
+        print(tb)
         return False
