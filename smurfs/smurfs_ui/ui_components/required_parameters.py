@@ -1,15 +1,16 @@
-from dash import html
-import dash_bootstrap_components as dbc
+# File: smurfs/smurfs_ui/ui_components/required_parameters.py
+import dash_mantine_components as dmc
 from smurfs.smurfs_ui.common_ui import create_input_with_validation, create_card_with_icon
 
+
 def create_required_parameters():
-    return dbc.Col([
+    return dmc.GridCol([
         create_card_with_icon(
             "Required Parameters",
             [
-                dbc.Row([
-                    dbc.Col([
-                        dbc.Label("Target"),
+                dmc.Stack([
+                    dmc.Stack([
+                        dmc.Text("Target", fw=500),
                         create_input_with_validation(
                             "target",
                             "text",
@@ -18,11 +19,10 @@ def create_required_parameters():
                             help_text="Name of the target star (e.g., 'HD 24712') or path to a custom data file. "
                                       "For TESS targets, you can use the TIC ID."
                         )
-                    ], className="mb-3")
-                ]),
-                dbc.Row([
-                    dbc.Col([
-                        dbc.Label("SNR"),
+                    ], gap="xs"),
+
+                    dmc.Stack([
+                        dmc.Text("SNR", fw=500),
                         create_input_with_validation(
                             "snr",
                             "number",
@@ -33,11 +33,10 @@ def create_required_parameters():
                                       "Higher values result in more stringent frequency selection. "
                                       "Typical values range from 4 to 8."
                         )
-                    ], className="mb-3")
-                ]),
-                dbc.Row([
-                    dbc.Col([
-                        dbc.Label("Window Size"),
+                    ], gap="xs"),
+
+                    dmc.Stack([
+                        dmc.Text("Window Size", fw=500),
                         create_input_with_validation(
                             "window-size",
                             "number",
@@ -48,11 +47,10 @@ def create_required_parameters():
                                       "This defines the range around each peak where other frequencies "
                                       "are considered part of the noise. Typically 2-5 times the frequency resolution."
                         )
-                    ], className="mb-3")
-                ]),
-                dbc.Row([
-                    dbc.Col([
-                        dbc.Label("Sigma Clip"),
+                    ], gap="xs"),
+
+                    dmc.Stack([
+                        dmc.Text("Sigma Clip", fw=500),
                         create_input_with_validation(
                             "sigma-clip",
                             "number",
@@ -64,11 +62,10 @@ def create_required_parameters():
                                       "Points deviating more than this many standard deviations will be removed. "
                                       "Default: 4.0"
                         )
-                    ], className="mb-3")
-                ]),
-                dbc.Row([
-                    dbc.Col([
-                        dbc.Label("Iterations"),
+                    ], gap="xs"),
+
+                    dmc.Stack([
+                        dmc.Text("Iterations", fw=500),
                         create_input_with_validation(
                             "iters",
                             "number",
@@ -80,10 +77,10 @@ def create_required_parameters():
                                       "Multiple iterations can help remove outliers more effectively. "
                                       "Default: 1"
                         )
-                    ], className="mb-3")
-                ])
+                    ], gap="xs")
+                ], gap="md")
             ],
-            "primary",
+            "blue",
             "fas fa-asterisk"
         )
-    ], width=6)
+    ], span=6)

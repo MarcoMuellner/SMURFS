@@ -1,6 +1,6 @@
 # File: smurfs/smurfs_ui/__main__.py
-from dash import Dash, callback, Input, Output, State, ALL, html
-import dash_bootstrap_components as dbc
+from dash import Dash, callback, Input, Output, State, ALL, html, _dash_renderer
+import dash_mantine_components as dmc
 import multiprocessing as mp
 from queue import Empty
 import traceback
@@ -10,22 +10,27 @@ from threading import Timer
 
 from dash.exceptions import PreventUpdate
 
-from smurfs.smurfs_ui.common_ui import create_alert
 from smurfs.smurfs_ui.ui_components.header import create_header
+from smurfs.smurfs_ui.ui_components.notifications import show_success_notification
 from smurfs.smurfs_ui.ui_components.required_parameters import create_required_parameters
 from smurfs.smurfs_ui.ui_components.optional_parameters import create_optional_parameters
 from smurfs.smurfs_ui.ui_components.advanced_options import create_advanced_options
-from smurfs.smurfs_ui.ui_components.action_area import create_action_area
 from smurfs.smurfs_ui.ui_components.log_area import create_log_area
 from smurfs.smurfs_ui.process_manager import run_analysis_process
 from smurfs.smurfs_common.support.mprint import mprint, error as error_style
+
+# Set React version for Mantine
+_dash_renderer._set_react_version("18.2.0")
 
 
 class SMURFSApp:
     def __init__(self):
         self.app = Dash(
             __name__,
-            external_stylesheets=[dbc.themes.SUPERHERO, dbc.icons.FONT_AWESOME],
+            external_stylesheets=[
+                "https://use.fontawesome.com/releases/v5.15.4/css/all.css",
+                *dmc.styles.ALL
+            ],
             suppress_callback_exceptions=True
         )
         self.log_queue = mp.Queue()
@@ -34,83 +39,123 @@ class SMURFSApp:
         self.setup_callbacks()
 
     def setup_layout(self):
-        self.app.layout = html.Div([
-            create_header(),
-            dbc.Container([
-                dbc.Row([
-                    dbc.Col([
-                        dbc.Row([
-                            create_required_parameters(),
-                            create_optional_parameters()
-                        ]),
-                        create_advanced_options(),
-                        *create_action_area()
-                    ], width=8),
-                    create_log_area()
+        self.app.layout = dmc.MantineProvider(
+            forceColorScheme="light",
+            theme={
+                "primaryColor": "indigo",
+                "fontFamily": "'Inter', sans-serif",
+                "components": {
+                    "Button": {"defaultProps": {"fw": 400}},
+                    "Alert": {"styles": {"title": {"fontWeight": 500}}},
+                    "AvatarGroup": {"styles": {"truncated": {"fontWeight": 500}}},
+                    "Badge": {"styles": {"root": {"fontWeight": 500}}},
+                    "Progress": {"styles": {"label": {"fontWeight": 500}}},
+                    "RingProgress": {"styles": {"label": {"fontWeight": 500}}},
+                    "CodeHighlightTabs": {"styles": {"file": {"padding": 12}}},
+                    "Table": {
+                        "defaultProps": {
+                            "highlightOnHover": True,
+                            "withTableBorder": True,
+                            "verticalSpacing": "sm",
+                            "horizontalSpacing": "md",
+                        }
+                    },
+                },
+            },
+            children=[
+                html.Div([
+                    dmc.NotificationProvider(
+                        position="top-right",
+                        autoClose=3000,
+                        zIndex=1000
+                    ),
+                    dmc.Container([
+                        create_header(),
+                        dmc.Grid([
+                            # Left side - Input form
+                            dmc.GridCol([
+                                dmc.Grid([
+                                    create_required_parameters(),
+                                    create_optional_parameters()
+                                ], gutter="md"),
+                                create_advanced_options()
+                            ], span=8),
+                            # Right side - Log area
+                            create_log_area()
+                        ], gutter="xl")
+                    ], size="2xl", px="md")
                 ])
-            ], fluid=True)
-        ])
+            ]
+        )
 
     def setup_callbacks(self):
         @self.app.callback(
-            [Output({"type": "text-input", "id": ALL}, "invalid"),
+            [Output({"type": "text-input", "id": ALL}, "error"),
              Output("submit-button", "disabled")],
             [Input({"type": "text-input", "id": ALL}, "value"),
-             Input({"type": "dropdown", "id": ALL}, "value"),
-             Input({"type": "checklist", "id": ALL}, "value")]
+             Input({"type": "select", "id": ALL}, "value"),
+             Input({"type": "switch", "id": ALL}, "checked")]
         )
-        def validate_inputs_and_update_button(text_values, dropdown_values, checklist_values):
+        def validate_inputs_and_update_button(text_values, select_values, switch_values):
             """Validate all inputs and update button state"""
             # Initialize validation states for text/number inputs
-            invalids = [False] * len(text_values)
+            invalids = [None] * len(text_values)  # None means no error
 
-            # Validate required text/number inputs (target, snr, window_size, sigma_clip, iters)
-            required_indices = [0, 1, 2, 3, 4]  # Indices of required fields in text_values
+            # Validate required text/number inputs
+            required_indices = [0, 1, 2, 3, 4]  # Indices of required fields
             for i in required_indices:
                 if i < len(text_values):  # Safety check
                     if text_values[i] is None or text_values[i] == "":
-                        invalids[i] = True
+                        invalids[i] = "This field is required"
                     elif i > 0:  # Numeric validation for non-target fields
                         try:
                             val = float(text_values[i])
                             if i == 4:  # iters
                                 if not float(val).is_integer() or val < 1:
-                                    invalids[i] = True
+                                    invalids[i] = "Must be a positive integer"
                             else:  # other numeric fields
                                 if val <= 0:
-                                    invalids[i] = True
+                                    invalids[i] = "Must be greater than 0"
                         except (ValueError, TypeError):
-                            invalids[i] = True
+                            invalids[i] = "Invalid number"
 
             # Check if all required fields are valid
-            button_disabled = any(invalids[:5])
+            button_disabled = any(invalids[i] is not None for i in required_indices)
 
             return invalids, button_disabled
 
         @self.app.callback(
-            Output("results-area", "children"),
             Input("submit-button", "n_clicks"),
             [State({"type": "text-input", "id": ALL}, "value"),
-             State({"type": "dropdown", "id": ALL}, "value"),
-             State({"type": "checklist", "id": ALL}, "value")],
+             State({"type": "select", "id": ALL}, "value"),
+             State({"type": "switch", "id": ALL}, "checked")],
             prevent_initial_call=True
         )
-        def process_analysis(n_clicks, text_values, dropdown_values, checklist_values):
+        def process_analysis(n_clicks, text_values, select_values, switch_values):
             if not n_clicks:
                 return ""
 
             try:
                 # Collect values from different input types
                 text_fields = ["target", "snr", "window-size", "sigma-clip", "iters",
-                               "freq-min", "freq-max", "extend-frequencies", "frequency-detection", "save-path"]
+                               "freq-min", "freq-max", "extend-frequencies",
+                               "frequency-detection", "save-path"]
                 text_dict = dict(zip(text_fields, text_values))
 
-                dropdown_fields = ["mission", "flux-type", "improve-fit-mode", "fit-method"]
-                dropdown_dict = dict(zip(dropdown_fields, dropdown_values))
+                select_fields = ["mission", "flux-type", "fit-method"]
+                select_dict = dict(zip(select_fields, select_values))
 
-                checklist_dict = {"advanced-options": checklist_values[0] if checklist_values else []}
+                # Collect switch states into advanced options list
+                advanced_options = []
+                switch_fields = ["skip-similar", "skip-cutoff", "do-pca", "do-psf",
+                                 "store-object", "apply-corrections", "improve-fit"]
+                for field, state in zip(switch_fields, switch_values or []):
+                    if state:
+                        advanced_options.append(field)
 
-                value_dict = {**text_dict, **dropdown_dict, **checklist_dict}
+                switch_dict = {"advanced-options": advanced_options}
+
+                value_dict = {**text_dict, **select_dict, **switch_dict}
 
                 # Start analysis process
                 if self.current_process and self.current_process.is_alive():
@@ -121,41 +166,33 @@ class SMURFSApp:
                     args=(value_dict, self.log_queue)
                 )
                 self.current_process.start()
-
-                return dbc.Alert(
-                    "Analysis started. Check the log area for progress.",
-                    color="info"
-                )
+                show_success_notification("Analysis started", "Check the log area for progress.")
 
             except Exception as e:
-                # Get the full traceback
                 tb = traceback.format_exc()
-
-                # Log the error with traceback
                 mprint(f"Error occurred during analysis:", error_style)
                 mprint(f"Error message: {str(e)}", error_style)
                 mprint("Traceback:", error_style)
                 for line in tb.split('\n'):
-                    if line.strip():  # Skip empty lines
+                    if line.strip():
                         mprint(f"  {line}", error_style)
 
-                # Create alert with error details
-                return dbc.Alert([
-                    html.H4("Error", className="alert-heading"),
-                    html.P(str(e)),
-                    html.Hr(),
-                    html.Pre(
-                        tb,
-                        style={
-                            'whiteSpace': 'pre-wrap',
-                            'wordBreak': 'break-word',
-                            'fontSize': '0.8rem',
-                            'backgroundColor': 'rgba(0,0,0,0.1)',
-                            'padding': '10px',
-                            'borderRadius': '4px'
-                        }
-                    )
-                ], color="danger")
+                return dmc.Alert(
+                    children=[
+                        dmc.Text(str(e), size="sm"),
+                        dmc.Space(h=10),
+                        dmc.Prism(
+                            tb,
+                            language="python",
+                            withLineNumbers=True,
+                            copyLabel="Copy traceback",
+                            copiedLabel="Copied!"
+                        )
+                    ],
+                    title="Error",
+                    color="red",
+                    variant="filled"
+                ), False  # Hide loader
 
         @self.app.callback(
             [Output('log-messages', 'data'),
@@ -180,9 +217,10 @@ class SMURFSApp:
 
             # Create log entries
             log_entries = [
-                html.Div(
+                dmc.Text(
                     msg["text"],
-                    style={'color': msg["color"], 'padding': '2px 0'}
+                    c=msg["color"],
+                    style={'padding': '2px 0'}
                 ) for msg in current_messages
             ]
 
@@ -191,10 +229,6 @@ class SMURFSApp:
     def run(self, debug: bool = True, port: Optional[int] = 8050):
         Timer(1, lambda: webbrowser.open_new_tab(f'http://127.0.0.1:{port}')).start()
         self.app.run_server(debug=debug, port=port)
-
-
-def open_browser():
-    webbrowser.open_new_tab('http://127.0.0.1:8050')
 
 
 def main(port: Optional[int] = 8050):

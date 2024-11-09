@@ -1,127 +1,82 @@
-from typing import Optional, Any
-
-import dash_bootstrap_components as dbc
+# File: smurfs/smurfs_ui/common_ui.py
+from typing import Optional, Any, Union
+import dash_mantine_components as dmc
 from dash import html
 
-def create_card_with_icon(title, body_content, color, icon_class):
-    return dbc.Card([
-        dbc.CardHeader([
-            html.H4([
-                html.I(className=f"{icon_class} me-2"),
-                title
-            ], className="mb-0")
-        ], className=f"bg-{color}"),
-        dbc.CardBody(body_content)
-    ], className="shadow-sm")
 
+def create_input_with_validation(
+        id_base: str,
+        type: str,
+        placeholder: str,
+        required: bool = False,
+        min: Optional[float] = None,
+        max: Optional[float] = None,
+        value: Any = None,
+        help_text: Optional[str] = None
+) -> Union[dmc.TextInput, dmc.NumberInput, dmc.Tooltip]:
+    """Create a Mantine input with validation support and description."""
+    input_id = {"type": "text-input", "id": id_base}
 
-from dash import html
-import dash_bootstrap_components as dbc
-from typing import Optional, Any
-
-
-def create_input_with_validation(id_base: str, type: str, placeholder: str,
-                                 required: bool = False, min: Optional[float] = None,
-                                 max: Optional[float] = None, value: Any = None,
-                                 help_text: Optional[str] = None) -> html.Div:
-    """Create a Bootstrap input group with validation support and tooltip."""
-    input_id = {"type": "text-input", "id": id_base}  # Changed type to text-input
-
-    input_props = {
+    common_props = {
         "id": input_id,
-        "type": type,
         "placeholder": placeholder,
-        "value": value,
         "required": required,
-        "min": min if type == "number" else None,
-        "max": max if type == "number" else None,
-        "invalid": False
+        "style": {"marginBottom": "1rem", "width": "300px"},
+        "value": value
     }
 
-    input_props = {k: v for k, v in input_props.items() if v is not None}
+    if type == "number":
+        object = dmc.NumberInput(
+            **common_props,
+            min=min if min is not None else -1e9,
+            max=max if max is not None else 1e9,
+            stepHoldDelay=500,
+            stepHoldInterval=100
+        )
+    else:
+        object = dmc.TextInput(**common_props)
 
-    input_group = dbc.InputGroup([
-        dbc.Input(**input_props),
-        dbc.FormFeedback(
-            "Valid input",
-            type="valid",
-        ),
-        dbc.FormFeedback(
-            "This field is required" if required else "Invalid input",
-            type="invalid",
-        ),
-    ])
-
-    wrapper = html.Div([input_group], className="mb-3")
-
-    if help_text:
-        return html.Div([
-            wrapper,
-            dbc.Tooltip(
-                help_text,
-                target=input_id,
-                placement="right"
-            )
-        ])
-
-    return wrapper
+    if help_text is not None:
+        return dmc.Tooltip(
+            multiline=True,
+            withArrow=True,
+            label=help_text,
+            children=[object]
+        )
+    else:
+        return object
 
 
-def create_card(title: str, body_content: list, color: str = "primary") -> dbc.Card:
-    """Create a Bootstrap card with consistent styling.
-
-    Args:
-        title: Card header title
-        body_content: List of components for card body
-        color: Bootstrap color class
-    """
-    return dbc.Card([
-        dbc.CardHeader([
-            html.H4(title, className="mb-0")
-        ], className=f"bg-{color} text-white"),
-        dbc.CardBody(body_content)
-    ])
-
-
-def create_alert(title: str, message: str, color: str = "success") -> dbc.Alert:
-    """Create a Bootstrap alert with consistent styling.
-
-    Args:
-        title: Alert header
-        message: Alert message
-        color: Bootstrap color class
-    """
-    return dbc.Alert(
-        [
-            html.H4(title, className="alert-heading"),
-            html.P(message),
+def create_card_with_icon(title: str, children: list, color: str, icon_class: str) -> dmc.Paper:
+    """Create a Mantine paper with an icon."""
+    return dmc.Paper(
+        children=[
+            dmc.Group([
+                dmc.Group([
+                    html.I(className=icon_class),
+                    dmc.Title(title, order=4),
+                ], gap="xs"),
+            ], justify="apart", mb="md"),  # Changed position to justify
+            *children
         ],
-        color=color
+        p="lg",
+        radius="md",
+        withBorder=True,
+        shadow="sm"
     )
 
 
-def validate_numeric_input(value: Any, min_val: Optional[float] = None,
-                           max_val: Optional[float] = None, required: bool = False) -> bool:
-    """Validate a numeric input value.
-
-    Args:
-        value: Input value to validate
-        min_val: Minimum allowed value
-        max_val: Maximum allowed value
-        required: Whether the input is required
-    """
-    if required and not value:
-        return False
-
-    if not value and not required:
-        return True
-
-    try:
-        val = float(value)
-        if min_val is not None and val < min_val:
-            return False
-        if max_val is not None and val > max_val:
-            return False
-        return True
-    except (TypeError, ValueError):
-        return False
+def create_notification(
+        title: str,
+        message: str,
+        color: str = "blue",
+        icon: Optional[str] = None
+) -> dict:
+    """Create a Mantine notification configuration."""
+    return {
+        "title": title,
+        "message": message,
+        "color": color,
+        "icon": icon,
+        "autoClose": 5000
+    }

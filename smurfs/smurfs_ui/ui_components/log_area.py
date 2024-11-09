@@ -1,35 +1,41 @@
 # File: smurfs/smurfs_ui/ui_components/log_area.py
-from dash import html, dcc
-import dash_bootstrap_components as dbc
+import dash_mantine_components as dmc
+from dash import dcc, html
 
 
 def create_log_area():
-    return dbc.Col([
+    return dmc.GridCol([
         dcc.Store(id='log-messages', storage_type='memory', data=[]),
         dcc.Interval(id='log-interval', interval=100),
 
-        dbc.Card([
-            dbc.CardHeader([
-                html.H4([
-                    html.I(className="fas fa-terminal me-2"),
-                    "Execution Log"
-                ], className="mb-0")
-            ], className="bg-dark text-white"),
-            dbc.CardBody([
-                html.Div(
-                    id="log-area",
-                    className="font-monospace",
+        dmc.Paper(
+            children=[
+                dmc.Group([
+                    html.I(className="fas fa-terminal"),
+                    dmc.Title("Execution Log", order=4),
+                ], gap="xs", mb="md"),
+                dmc.Paper(
+                    children=dmc.ScrollArea(
+                        id="log-area",
+                        children=[],
+                        offsetScrollbars=True,
+                        type="always",
+                        style={
+                            "height": "calc(100vh - 250px)",
+                        }
+                    ),
                     style={
-                        'height': 'calc(100vh - 200px)',
-                        'overflowY': 'auto',
-                        'whiteSpace': 'pre-wrap',
-                        'backgroundColor': '#1a1a1a',
-                        'color': '#ffffff',
-                        'padding': '10px',
-                        'fontFamily': 'monospace',
-                        'fontSize': '0.875rem',
+                        "backgroundColor": "#1a1b1e",
+                        "fontFamily": "monospace",
+                        "fontSize": "0.875rem",
+                        "padding": "10px",
                     }
                 )
-            ], style={'padding': '0'})
-        ], className="sticky-top")
-    ], width=4)
+            ],
+            p="md",
+            radius="md",
+            withBorder=True,
+            shadow="sm",
+            style={"position": "sticky", "top": "1rem"}
+        )
+    ], span=4)
