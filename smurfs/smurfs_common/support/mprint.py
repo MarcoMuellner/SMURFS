@@ -5,6 +5,7 @@ from smurfs.smurfs_common.support.logging import LogLevel, ProcessLogger
 from smurfs.smurfs_common.support.settings import Settings
 
 
+
 class LogType(Enum):
     LOG = ('7;37;40', LogLevel.LOG)
     INFO = ('7;32;40', LogLevel.INFO)
@@ -26,7 +27,7 @@ class MPrinter:
     @classmethod
     def get_instance(cls) -> 'MPrinter':
         if cls._instance is None:
-            raise RuntimeError("MPrinter not initialized")
+            cls._instance = cls()
         return cls._instance
 
     def print(self, text: str, type: str):
