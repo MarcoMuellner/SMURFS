@@ -439,7 +439,7 @@ class FFinder:
         a_u = u.mag
 
         mprint(f"Skip similar: {skip_similar_text}", log)
-        mprint(f"Chancel after 10 similar: {similar_chancel_text}", log)
+        mprint(f"Cancel after 10 similar: {similar_chancel_text}", log)
         mprint(f"Window size: {window_size}", log)
         mprint(f"Number of extended frequencies: {extend_frequencies}", log)
         mprint(f"Nyquist frequency: {(self.nyquist * self.pdg.frequency.unit).round(2)}", info)
